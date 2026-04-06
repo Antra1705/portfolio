@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Petal {
@@ -10,22 +10,30 @@ interface Petal {
   duration: number;
   size: number;
   rotation: number;
+  drift: number;
 }
 
 const FallingPetals = () => {
-  const [petals, setPetals] = useState<Petal[]>([]);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const newPetals = Array.from({ length: 30 }).map((_, i) => ({
+    setMounted(true);
+  }, []);
+
+  const petals = useMemo<Petal[]>(() => {
+    if (!mounted) return [];
+    return Array.from({ length: 30 }).map((_, i) => ({
       id: i,
-      x: Math.random() * 100, // percentage
+      x: Math.random() * 100,
       delay: Math.random() * 10,
       duration: 10 + Math.random() * 15,
       size: 8 + Math.random() * 12,
       rotation: Math.random() * 360,
+      drift: Math.random() * 20 - 10,
     }));
-    setPetals(newPetals);
-  }, []);
+  }, [mounted]);
+
+  if (!mounted) return null;
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -43,7 +51,7 @@ const FallingPetals = () => {
             }}
             animate={{ 
               top: '110%', 
-              left: `${petal.x + (Math.random() * 20 - 10)}%`,
+              left: `${petal.x + petal.drift}%`,
               opacity: [0, 0.8, 0.8, 0],
               rotate: petal.rotation + 720
             }}

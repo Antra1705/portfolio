@@ -1,15 +1,35 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { IoMailOutline, IoLogoLinkedin, IoLogoGithub } from 'react-icons/io5';
 
 const Contact = () => {
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const contactPetals = useMemo(() => {
+        if (!mounted) return [];
+        return Array.from({ length: 15 }).map((_, i) => ({
+            id: i,
+            startTop: Math.random() * 80,
+            startLeft: Math.random() * 100,
+            endLeft1: Math.random() * 100,
+            endLeft2: Math.random() * 100,
+            endTop: 95 + Math.random() * 5,
+            duration: 6 + Math.random() * 8,
+            delay: Math.random() * 10,
+        }));
+    }, [mounted]);
+
     return (
         <section id="contact" className="relative w-full min-h-[85vh] flex flex-col justify-center overflow-hidden">
             
             {/* MAIN FLEX CONTAINER for the Card */}
-            <div className="relative z-10 w-full max-w-7xl mx-auto px-6 flex items-center justify-start pt-20 pb-40 overflow-visible">
+            <div className="relative z-10 w-full max-w-7xl mx-auto px-6 flex items-center justify-center pt-20 pb-40 overflow-visible">
                 
                 {/* Contact Card */}
                 <motion.div
@@ -54,22 +74,51 @@ const Contact = () => {
                 </motion.div>
             </div>
 
-            {/* TREE - Pushed further right and anchored to absolute bottom */}
+            {/* CHERRY BLOSSOM TREE - LEFT (flipped horizontally) */}
             <motion.div
-                initial={{ opacity: 0, scale: 1, x: 100 }}
-                whileInView={{ opacity: 1, scale: 1.1, x: 0 }}
+                initial={{ opacity: 0, scale: 0.95, x: -100, scaleX: -1 }}
+                whileInView={{ opacity: 1, scale: 1, x: 0, scaleX: -1 }}
                 viewport={{ once: true }}
-                transition={{ duration: 1, ease: "easeOut" }}
-                className="absolute bottom-0 right-[-3%] md:right-[-1%] w-full max-w-[850px] pointer-events-none z-0"
+                transition={{ duration: 1.2, ease: "easeOut" }}
+                className="absolute pointer-events-none z-10"
+                style={{
+                    bottom: '16px',
+                    left: '-1%',
+                    width: '50%',
+                    maxWidth: '380px',
+                }}
             >
                 <img 
                     src="/cherryblossom.png" 
                     alt="Cherry Blossom Tree" 
-                    className="w-full h-auto drop-shadow-2xl translate-y-[15px]" 
+                    className="w-full h-auto drop-shadow-2xl" 
+                    style={{ display: 'block' }}
                 />
             </motion.div>
 
-            {/* Pink Footer Bar - High z-index to overlap bottom of tree perfectly */}
+            {/* CHERRY BLOSSOM TREE - RIGHT */}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, x: 100 }}
+                whileInView={{ opacity: 1, scale: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.2, ease: "easeOut" }}
+                className="absolute pointer-events-none z-10"
+                style={{
+                    bottom: '16px',
+                    right: '-1%',
+                    width: '50%',
+                    maxWidth: '380px',
+                }}
+            >
+                <img 
+                    src="/cherryblossom.png" 
+                    alt="Cherry Blossom Tree" 
+                    className="w-full h-auto drop-shadow-2xl" 
+                    style={{ display: 'block' }}
+                />
+            </motion.div>
+
+            {/* Pink Footer Bar */}
             <div className="absolute bottom-0 left-0 w-full bg-[#F2AEBC] py-2.5 flex justify-center items-center z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.08)]">
                 <p className="text-white font-semibold text-xl tracking-tight drop-shadow-sm">
                     made with &lt;3 by Antra
@@ -77,33 +126,35 @@ const Contact = () => {
             </div>
             
             {/* Tiny falling petals */}
-            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-                {Array.from({ length: 15 }).map((_, i) => (
-                    <motion.img
-                        key={i}
-                        src="/petal.png"
-                        initial={{ 
-                            top: `${Math.random() * 80}%`, 
-                            left: `${Math.random() * 100}%`,
-                            opacity: 0,
-                            rotate: 0
-                        }}
-                        animate={{ 
-                            left: [`${Math.random() * 100}%`, `${Math.random() * 100}%`],
-                            top: `${95 + Math.random() * 5}%`,
-                            opacity: [0, 0.4, 0],
-                            rotate: 360
-                        }}
-                        transition={{ 
-                            duration: 6 + Math.random() * 8, 
-                            repeat: Infinity,
-                            ease: "linear",
-                            delay: Math.random() * 10
-                        }}
-                        className="absolute w-2"
-                    />
-                ))}
-            </div>
+            {mounted && (
+                <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+                    {contactPetals.map((petal) => (
+                        <motion.img
+                            key={petal.id}
+                            src="/petal.png"
+                            initial={{ 
+                                top: `${petal.startTop}%`, 
+                                left: `${petal.startLeft}%`,
+                                opacity: 0,
+                                rotate: 0
+                            }}
+                            animate={{ 
+                                left: [`${petal.endLeft1}%`, `${petal.endLeft2}%`],
+                                top: `${petal.endTop}%`,
+                                opacity: [0, 0.4, 0],
+                                rotate: 360
+                            }}
+                            transition={{ 
+                                duration: petal.duration, 
+                                repeat: Infinity,
+                                ease: "linear",
+                                delay: petal.delay
+                            }}
+                            className="absolute w-2"
+                        />
+                    ))}
+                </div>
+            )}
         </section>
     );
 };
