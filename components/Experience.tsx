@@ -9,14 +9,14 @@ const experienceData = [
         title: "Web Developer",
         company: "Mozilla Firefox Club",
         period: "2025 - Present",
-        desc: "Developing and maintaining community platforms, focusing on open-source web technologies and high-performance frontend solutions.",
+        desc: "Developing community platforms with a focus on open-source web technologies and frontend performance.",
         icon: <IoLaptopOutline />
     },
     {
         title: "Web Developer & Designer",
         company: "Indian Society for Technical Education",
         period: "2025 - Present",
-        desc: "Leading the creative direction and technical implementation of interactive web platforms for one of India's largest technical societies.",
+        desc: "Leading technical implementation and creative direction for interactive web platforms.",
         icon: <IoCodeOutline />
     }
 ];

@@ -34,7 +34,7 @@ const Hero = () => {
                         </a>
                     </div>
                 </motion.div>
-                
+
                 <motion.a
                     href="/Antra_Resume.pdf"
                     target="_blank"
