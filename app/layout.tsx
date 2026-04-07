@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Antra | Designer & AI Engineer",
   description: "Personal portfolio of Antra - Designer, Web Developer & AI Engineer.",
   icons: {
-    icon: "/favicon.png", // Correctly linking the favicon for your portfolio
+    icon: "/portfolio/favicon.png", // Correctly linking the favicon for your portfolio
   }
 };
 

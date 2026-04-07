@@ -36,7 +36,7 @@ const Hero = () => {
                 </motion.div>
 
                 <motion.a
-                    href="/Antra_Resume.pdf"
+                    href="/portfolio/Antra_Resume.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
                     initial={{ opacity: 0, scale: 0.8 }}
