@@ -89,7 +89,7 @@ const Contact = () => {
                 }}
             >
                 <img 
-                    src="/cherryblossom.png" 
+                    src="/portfolio/cherryblossom.png" 
                     alt="Cherry Blossom Tree" 
                     className="w-full h-auto drop-shadow-2xl" 
                     style={{ display: 'block' }}
@@ -111,7 +111,7 @@ const Contact = () => {
                 }}
             >
                 <img 
-                    src="/cherryblossom.png" 
+                    src="/portfolio/cherryblossom.png" 
                     alt="Cherry Blossom Tree" 
                     className="w-full h-auto drop-shadow-2xl" 
                     style={{ display: 'block' }}
@@ -131,7 +131,7 @@ const Contact = () => {
                     {contactPetals.map((petal) => (
                         <motion.img
                             key={petal.id}
-                            src="/petal.png"
+                            src="/portfolio/petal.png"
                             initial={{ 
                                 top: `${petal.startTop}%`, 
                                 left: `${petal.startLeft}%`,

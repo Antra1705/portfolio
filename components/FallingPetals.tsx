@@ -41,7 +41,7 @@ const FallingPetals = () => {
         {petals.map((petal) => (
           <motion.img
             key={petal.id}
-            src="/petal.png"
+            src="/portfolio/petal.png"
             alt=""
             initial={{ 
               top: '-10%', 
