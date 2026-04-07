@@ -36,37 +36,37 @@ const Contact = () => {
                     initial={{ opacity: 0, x: -50 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    className="w-full max-w-md glass rounded-[32px] p-10 border-white/30 backdrop-blur-3xl shadow-xl space-y-10"
+                    className="w-full max-w-md glass rounded-[32px] p-10 border-[#FFFDE7]/30 backdrop-blur-3xl shadow-xl space-y-10"
                 >
                     <div className="flex items-center gap-4">
-                        <IoMailOutline className="text-3xl text-white" />
-                        <h2 className="text-2xl font-semibold tracking-tight text-white">Contact</h2>
+                        <IoMailOutline className="text-3xl text-[#FFFDE7]" />
+                        <h2 className="text-2xl font-semibold tracking-tight text-[#FFFDE7]">Contact</h2>
                     </div>
 
                     <div className="space-y-6">
                         <a href="mailto:antra.1705@gmail.com" className="flex items-center gap-4 group">
-                            <div className="p-2 rounded-xl bg-white/10 group-hover:bg-white/20 transition-all">
-                                <IoMailOutline className="text-xl text-white/90" />
+                            <div className="p-2 rounded-xl bg-[#FFFDE7]/10 group-hover:bg-[#FFFDE7]/20 transition-all">
+                                <IoMailOutline className="text-xl text-[#FFFDE7]/90" />
                             </div>
-                            <span className="text-[15px] font-medium text-white/70 group-hover:text-white transition-colors">
+                            <span className="text-[15px] font-medium text-[#FFFDE7]/70 group-hover:text-[#FFFDE7] transition-colors">
                                 antra.1705@gmail.com
                             </span>
                         </a>
 
                         <a href="https://linkedin.com/in/antra-dev" target="_blank" className="flex items-center gap-4 group">
-                            <div className="p-2 rounded-xl bg-white/10 group-hover:bg-white/20 transition-all">
-                                <IoLogoLinkedin className="text-xl text-white/90" />
+                            <div className="p-2 rounded-xl bg-[#FFFDE7]/10 group-hover:bg-[#FFFDE7]/20 transition-all">
+                                <IoLogoLinkedin className="text-xl text-[#FFFDE7]/90" />
                             </div>
-                            <span className="text-[15px] font-medium text-white/70 group-hover:text-white transition-colors">
+                            <span className="text-[15px] font-medium text-[#FFFDE7]/70 group-hover:text-[#FFFDE7] transition-colors">
                                 www.linkedin.com/in/antra-dev
                             </span>
                         </a>
 
                         <a href="https://github.com/Antra1705" target="_blank" className="flex items-center gap-4 group">
-                            <div className="p-2 rounded-xl bg-white/10 group-hover:bg-white/20 transition-all">
-                                <IoLogoGithub className="text-xl text-white/90" />
+                            <div className="p-2 rounded-xl bg-[#FFFDE7]/10 group-hover:bg-[#FFFDE7]/20 transition-all">
+                                <IoLogoGithub className="text-xl text-[#FFFDE7]/90" />
                             </div>
-                            <span className="text-[15px] font-medium text-white/70 group-hover:text-white transition-colors">
+                            <span className="text-[15px] font-medium text-[#FFFDE7]/70 group-hover:text-[#FFFDE7] transition-colors">
                                 https://github.com/Antra1705
                             </span>
                         </a>
@@ -120,7 +120,7 @@ const Contact = () => {
 
             {/* Pink Footer Bar */}
             <div className="absolute bottom-0 left-0 w-full bg-[#F2AEBC] py-2.5 flex justify-center items-center z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.08)]">
-                <p className="text-white font-semibold text-xl tracking-tight drop-shadow-sm">
+                <p className="text-[#FFFDE7] font-semibold text-xl tracking-tight drop-shadow-sm">
                     made with &lt;3 by Antra
                 </p>
             </div>

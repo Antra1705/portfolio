@@ -25,11 +25,11 @@ const FallingPetals = () => {
     return Array.from({ length: 30 }).map((_, i) => ({
       id: i,
       x: Math.random() * 100,
-      delay: Math.random() * 10,
-      duration: 10 + Math.random() * 15,
+      delay: i * 0.8 + Math.random() * 2, // Staggered delays to prevent clumping
+      duration: 12 + Math.random() * 8, // More consistent duration
       size: 8 + Math.random() * 12,
       rotation: Math.random() * 360,
-      drift: Math.random() * 20 - 10,
+      drift: Math.random() * 30 - 15,
     }));
   }, [mounted]);
 
@@ -47,13 +47,13 @@ const FallingPetals = () => {
               top: '-10%', 
               left: `${petal.x}%`, 
               opacity: 0,
-              rotate: petal.rotation 
+              rotate: petal.rotation
             }}
             animate={{ 
               top: '110%', 
               left: `${petal.x + petal.drift}%`,
-              opacity: [0, 0.8, 0.8, 0],
-              rotate: petal.rotation + 720
+              opacity: [0, 1, 1, 0],
+              rotate: petal.rotation + 90
             }}
             transition={{ 
               duration: petal.duration, 

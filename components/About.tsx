@@ -21,11 +21,6 @@ const About = () => {
                         Whether architecture-level systems or pixel-perfect interfaces, I believe in building technology that feels as natural as nature itself. My work is inspired by minimalist structures and the efficiency of automated processes.
                     </p>
                 </div>
-                
-                {/* Subtle Petal Accent */}
-                <div className="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
-                    <img src="/petal.png" className="w-16 rotate-45" alt="" />
-                </div>
             </motion.div>
         </section>
     );

@@ -2,11 +2,11 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { IoLogoGithub, IoLogoLinkedin, IoLogoTwitter } from 'react-icons/io5';
+import { IoLogoGithub, IoLogoLinkedin } from 'react-icons/io5';
 
 const Hero = () => {
     return (
-        <section className="relative w-full h-screen flex flex-col items-center justify-center overflow-hidden">
+        <section id="home" className="relative w-full h-screen flex flex-col items-center justify-center overflow-hidden">
             <div className="relative z-10 text-center px-6">
                 <motion.h1
                     initial={{ opacity: 0, y: 30 }}
@@ -32,20 +32,20 @@ const Hero = () => {
                         <a href="https://linkedin.com" className="text-2xl text-[#FFFDE7]/40 hover:text-[#FFFDE7] transition-all hover:scale-110">
                             <IoLogoLinkedin />
                         </a>
-                        <a href="https://twitter.com" className="text-2xl text-[#FFFDE7]/40 hover:text-[#FFFDE7] transition-all hover:scale-110">
-                            <IoLogoTwitter />
-                        </a>
                     </div>
                 </motion.div>
                 
-                <motion.button
+                <motion.a
+                    href="/Antra_Resume.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 1.2, duration: 0.5 }}
-                    className="mt-16 px-10 py-3 rounded-full bg-[#F2AEBC]/30 border border-[#F2AEBC]/50 text-[#FFFDE7] font-bold text-[11px] uppercase tracking-widest hover:bg-[#F2AEBC] hover:border-transparent transition-all backdrop-blur-md"
+                    className="mt-16 px-10 py-3 rounded-full bg-[#F2AEBC]/30 border border-[#F2AEBC]/50 text-[#FFFDE7] font-bold text-[11px] uppercase tracking-widest hover:bg-[#F2AEBC] hover:border-transparent transition-all backdrop-blur-md inline-block shadow-lg active:scale-95"
                 >
                     Resume
-                </motion.button>
+                </motion.a>
             </div>
 
         </section>

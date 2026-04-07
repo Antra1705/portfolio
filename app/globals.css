@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* SF Pro Display - Available Upright Weights */
 @font-face {
   font-family: 'SF Pro Display';
   src: url('/fonts/SFPRODISPLAYREGULAR.OTF') format('opentype');
@@ -24,18 +25,44 @@
   font-display: swap;
 }
 
+/* Mapping missing upright weights to closest variants */
 @font-face {
   font-family: 'SF Pro Display';
-  src: url('/fonts/SFPRODISPLAYBLACKITALIC.OTF') format('opentype');
-  font-weight: 900;
+  src: url('/fonts/SFPRODISPLAYREGULAR.OTF') format('opentype');
+  font-weight: 100 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('/fonts/SFPRODISPLAYMEDIUM.OTF') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('/fonts/SFPRODISPLAYBOLD.OTF') format('opentype');
+  font-weight: 800 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* SF Pro Display - Italic Weights */
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('/fonts/SFPRODISPLAYTHINITALIC.OTF') format('opentype');
+  font-weight: 100;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
   font-family: 'SF Pro Display';
-  src: url('/fonts/SFPRODISPLAYSEMIBOLDITALIC.OTF') format('opentype');
-  font-weight: 600;
+  src: url('/fonts/SFPRODISPLAYULTRALIGHTITALIC.OTF') format('opentype');
+  font-weight: 200;
   font-style: italic;
   font-display: swap;
 }
@@ -50,8 +77,8 @@
 
 @font-face {
   font-family: 'SF Pro Display';
-  src: url('/fonts/SFPRODISPLAYTHINITALIC.OTF') format('opentype');
-  font-weight: 100;
+  src: url('/fonts/SFPRODISPLAYSEMIBOLDITALIC.OTF') format('opentype');
+  font-weight: 600;
   font-style: italic;
   font-display: swap;
 }
@@ -66,8 +93,8 @@
 
 @font-face {
   font-family: 'SF Pro Display';
-  src: url('/fonts/SFPRODISPLAYULTRALIGHTITALIC.OTF') format('opentype');
-  font-weight: 200;
+  src: url('/fonts/SFPRODISPLAYBLACKITALIC.OTF') format('opentype');
+  font-weight: 900;
   font-style: italic;
   font-display: swap;
 }
@@ -76,8 +103,8 @@
   --background: #9BD0ED;
   --foreground: #FFFDE7;
   --pink: #F2AEBC;
-  --glass-bg: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-bg: rgba(255, 253, 231, 0.1);
+  --glass-border: rgba(255, 253, 231, 0.2);
 }
 
 body {
@@ -91,7 +118,7 @@ body {
 
 @layer utilities {
   .glass {
-    @apply backdrop-blur-xl border border-white/20 bg-white/10;
+    @apply backdrop-blur-xl border border-[#FFFDE7]/20 bg-[#FFFDE7]/10;
   }
 }
 
