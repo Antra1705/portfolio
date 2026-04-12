@@ -2,9 +2,16 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { IoBriefcaseOutline, IoCodeOutline, IoLaptopOutline, IoTerminalOutline } from 'react-icons/io5';
+import { IoBriefcaseOutline, IoCodeOutline, IoLaptopOutline, IoTerminalOutline, IoColorPaletteOutline } from 'react-icons/io5';
 
 const experienceData = [
+    {
+        title: "Co-Creative Head",
+        company: "Indian Society for Technical Education",
+        period: "2026 - Present",
+        desc: "Spearheading creative strategy and design initiatives for technical and cultural events within the society.",
+        icon: <IoColorPaletteOutline />
+    },
     {
         title: "Web Developer",
         company: "Mozilla Firefox Club",

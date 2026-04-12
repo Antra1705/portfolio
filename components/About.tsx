@@ -15,10 +15,13 @@ const About = () => {
                 <div className="relative z-10">
                     <h2 className="text-3xl font-black mb-8 tracking-tight text-[#FFFDE7]">About Me</h2>
                     <p className="text-lg leading-relaxed font-medium text-[#FFFDE7]/70 mb-6">
-                        I am Antra, a designer who specializes in blending high-fidelity aesthetics with complex engineering workflows. My passion lies at the intersection of <span className="text-[#FFFDE7] font-bold">visual design</span> and <span className="text-[#FFFDE7] font-bold">AI engineering</span>.
+                        I’m Antra, a web developer and designer focused on creating modern, responsive, and visually engaging web applications. I blend design thinking with development skills to deliver seamless user experiences.
+                    </p>
+                    <p className="text-lg leading-relaxed font-medium text-[#FFFDE7]/70 mb-6">
+                        I’m also expanding my skill set in AI/ML and data science at a foundational level, with an interest in integrating intelligent features into web-based products.
                     </p>
                     <p className="text-lg leading-relaxed font-medium text-[#FFFDE7]/70">
-                        Whether architecture-level systems or pixel-perfect interfaces, I believe in building technology that feels as natural as nature itself. My work is inspired by minimalist structures and the efficiency of automated processes.
+                        Driven by curiosity and continuous learning, I strive to build solutions that are both practical and forward-looking.
                     </p>
                 </div>
             </motion.div>

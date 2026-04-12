@@ -13,7 +13,7 @@ import FallingPetals from '../components/FallingPetals';
 
 export default function Home() {
     const [mounted, setMounted] = useState(false);
-    const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
     const toggleTheme = () => {
         setTheme(prev => prev === 'light' ? 'dark' : 'light');

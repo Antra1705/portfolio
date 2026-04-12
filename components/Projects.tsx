@@ -25,6 +25,13 @@ const projects = [
         tech: ["React", "Express", "Node.js", "Socket.io"],
         link: "https://zerodha-clone-antra.vercel.app/",
         github: "https://github.com/Antra1705/ZerodhaClone"
+    },
+    {
+        title: "ApiForge",
+        desc: "A powerful API design and debugging platform that allows developers to forge, test, and document RESTful endpoints with ease.",
+        tech: ["Next.js", "Javascript", "Tailwind", "API Forge"],
+        link: "https://api-forge-js.vercel.app/",
+        github: "https://github.com/Antra1705/ApiForge"
     }
 ];
 

@@ -128,7 +128,7 @@ const Terminal = ({ onToggleTheme, currentTheme }: { onToggleTheme?: () => void;
                 transition={{ duration: 0.8 }}
                 onClick={focusInput}
                 className="w-full max-w-3xl glass rounded-xl overflow-hidden shadow-2xl border-[#FFFDE7]/10 cursor-text"
-                style={{ background: 'rgba(155, 208, 237, 0.15)' }}
+                style={{ background: currentTheme === 'light' ? 'rgba(155, 208, 237, 0.15)' : 'rgba(2, 29, 56, 0.2)' }}
             >
                 {/* Terminal Header */}
                 <div className="bg-[#FFFDE7]/10 px-4 py-3 flex items-center justify-between border-b border-[#FFFDE7]/10">
@@ -187,6 +187,11 @@ const Terminal = ({ onToggleTheme, currentTheme }: { onToggleTheme?: () => void;
                                     className="absolute inset-0 opacity-0 cursor-default bg-transparent outline-none border-none caret-transparent"
                                 />
                                 <span className="text-[#FFFDE7] z-10">{input}</span>
+                                {!input && (
+                                    <span className="absolute left-0 text-[#FFFDE7]/30 italic pointer-events-none">
+                                        Type 'help' for commands...
+                                    </span>
+                                )}
                                 <motion.span
                                     animate={{ opacity: [1, 0, 1] }}
                                     transition={{ repeat: Infinity, duration: 0.8 }}
@@ -194,13 +199,6 @@ const Terminal = ({ onToggleTheme, currentTheme }: { onToggleTheme?: () => void;
                                 />
                             </div>
                         </form>
-                    )}
-
-                    {/* Placeholder hint when intro is finishing */}
-                    {!isIntroFinished && showThirdLine && (
-                        <div className="flex gap-2 opacity-50 italic text-[11px] mt-4 text-[#FFFDE7]">
-                            Ready to accept user input...
-                        </div>
                     )}
                 </div>
             </motion.div>
