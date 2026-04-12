@@ -32,6 +32,12 @@ const projects = [
         tech: ["Next.js", "Javascript", "Tailwind", "API Forge"],
         link: "https://api-forge-js.vercel.app/",
         github: "https://github.com/Antra1705/ApiForge"
+    },
+    {
+        title: "Discord Orchestrator",
+        desc: "A comprehensive discord server moderation system designed for automated user management, role assignment, and community orchestration.",
+        tech: ["Node.js", "Discord.js", "Automation", "Security"],
+        github: "https://github.com/SIDDHESH-2006/DiscordServerModerationOrchestrator"
     }
 ];
 
