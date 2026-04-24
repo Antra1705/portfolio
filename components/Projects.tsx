@@ -198,8 +198,17 @@ const PreviewModal = ({ isOpen, image, onClose }: { isOpen: boolean; image: stri
 const Projects = () => {
     const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [activeProject, setActiveProject] = useState<any>(null);
+    const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
 
     const folderNames = ["Design", "Web Development", "AI/ML"];
+
+    // Close menu on click outside
+    React.useEffect(() => {
+        const handleClick = () => setActiveProject(null);
+        window.addEventListener('click', handleClick);
+        return () => window.removeEventListener('click', handleClick);
+    }, []);
 
     interface SidebarItem {
         icon: React.ReactNode;
@@ -344,36 +353,57 @@ const Projects = () => {
                                             Projects
                                         </button>
 
-                                        {projectsData[selectedFolder as keyof typeof projectsData].length > 0 ? (
+                                        {selectedFolder && projectsData[selectedFolder as keyof typeof projectsData].length > 0 ? (
                                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-10">
                                                 {projectsData[selectedFolder as keyof typeof projectsData].map((item: any, idx) => (
-                                                    <motion.div
-                                                        key={idx}
-                                                        initial={{ opacity: 0, y: 10 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        className="flex flex-col items-center gap-3 group cursor-pointer"
-                                                        onClick={() => {
-                                                            if (item.type === 'image') {
-                                                                setPreviewImage(item.src);
-                                                            } else if (item.link !== "#") {
-                                                                window.open(item.link, "_blank");
-                                                            }
-                                                        }}
-                                                    >
-                                                        <div className="w-24 h-28 bg-blue-500/10 border border-blue-500/20 rounded-xl flex flex-col items-center justify-center relative overflow-hidden shadow-xl group-hover:bg-blue-500/20 transition-all backdrop-blur-sm">
-                                                            {item.type === 'image' ? (
-                                                                <img src={item.src} className="w-full h-full object-cover" alt={item.title} />
-                                                            ) : (
-                                                                <>
-                                                                    <IoDocumentOutline className="text-4xl text-[#60a5fa]" />
-                                                                    <div className="absolute bottom-0 left-0 right-0 bg-[#3b82f6]/40 py-1.5 text-[8px] font-black text-center uppercase tracking-[0.2em] text-white">Project</div>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                        <span className="text-white/80 font-bold text-[11px] text-center px-2 line-clamp-2 leading-tight group-hover:text-white transition-colors">
-                                                            {item.title}
-                                                        </span>
-                                                    </motion.div>
+                                                    <div key={idx} className="relative group">
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            className={`flex flex-col items-center gap-3 cursor-pointer p-2 rounded-xl transition-all ${activeProject?.title === item.title ? 'bg-blue-500/30' : 'hover:bg-white/5'}`}
+                                                            onClick={(e) => {
+                                                                if (item.type === 'image') {
+                                                                    setPreviewImage(item.src);
+                                                                } else {
+                                                                    e.stopPropagation();
+                                                                    const menuWidth = 256;
+                                                                    const menuHeight = 320;
+                                                                    const padding = 20;
+                                                                    let x = e.clientX;
+                                                                    let y = e.clientY;
+
+                                                                    // Edge detection with padding
+                                                                    if (x + menuWidth + padding > window.innerWidth) {
+                                                                        x = Math.max(padding, x - menuWidth);
+                                                                    }
+                                                                    if (y + menuHeight + padding > window.innerHeight) {
+                                                                        y = Math.max(padding, y - menuHeight);
+                                                                    }
+                                                                    
+                                                                    // Safety clamp
+                                                                    x = Math.min(Math.max(padding, x), window.innerWidth - menuWidth - padding);
+                                                                    y = Math.min(Math.max(padding, y), window.innerHeight - menuHeight - padding);
+
+                                                                    setActiveProject(activeProject?.title === item.title ? null : item);
+                                                                    setMenuPos({ x, y });
+                                                                }
+                                                            }}
+                                                        >
+                                                            <div className="w-24 h-28 bg-blue-500/10 border border-blue-500/20 rounded-xl flex flex-col items-center justify-center relative overflow-hidden shadow-xl group-hover:bg-blue-500/20 transition-all backdrop-blur-sm">
+                                                                {item.type === 'image' ? (
+                                                                    <img src={item.src} className="w-full h-full object-cover" alt={item.title} />
+                                                                ) : (
+                                                                    <>
+                                                                        <IoDocumentOutline className="text-4xl text-[#60a5fa]" />
+                                                                        <div className="absolute bottom-0 left-0 right-0 bg-[#3b82f6]/40 py-1.5 text-[8px] font-black text-center uppercase tracking-[0.2em] text-white">Project</div>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                            <span className="text-white/80 font-bold text-[11px] text-center px-2 line-clamp-2 leading-tight group-hover:text-white transition-colors">
+                                                                {item.title}
+                                                            </span>
+                                                        </motion.div>
+                                                    </div>
                                                 ))}
                                             </div>
                                         ) : (
@@ -402,6 +432,91 @@ const Projects = () => {
                     </div>
                 </motion.div>
             </div>
+
+            {/* Project Context Menu - Global Instance */}
+            <AnimatePresence>
+                {activeProject && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                        className="fixed z-[110] w-64 rounded-xl overflow-hidden shadow-2xl border border-white/10 backdrop-blur-3xl py-1.5"
+                        style={{ 
+                            left: menuPos.x, 
+                            top: menuPos.y,
+                            background: 'rgba(2, 29, 56, 0.85)'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Project Info Section */}
+                        <div className="px-3 py-2 border-b border-white/10">
+                            <div className="text-[10px] uppercase tracking-widest text-white/40 font-black mb-1">Get Info</div>
+                            <div className="text-white font-bold text-sm mb-0.5">{activeProject.title}</div>
+                            {activeProject.desc && (
+                                <div className="text-[10px] text-white/50 leading-tight mb-2">{activeProject.desc}</div>
+                            )}
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                                {activeProject.tech?.map((t: string) => (
+                                    <span key={t} className="text-[8px] bg-white/10 px-1.5 py-0.5 rounded text-white/70 uppercase font-bold">{t}</span>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="py-1">
+                            {activeProject.link && (
+                                <button 
+                                    onClick={() => window.open(activeProject.link, '_blank')}
+                                    className="w-full px-3 py-1.5 flex items-center justify-between text-xs text-white/90 hover:bg-[#3b82f6] hover:text-white group transition-colors"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <IoOpenOutline className="text-sm opacity-60 group-hover:opacity-100" />
+                                        <span>Open Deployed Site</span>
+                                    </div>
+                                    <IoChevronForward className="text-[10px] opacity-30" />
+                                </button>
+                            )}
+                            <button 
+                                onClick={() => window.open(activeProject.github, '_blank')}
+                                className="w-full px-3 py-1.5 flex items-center justify-between text-xs text-white/90 hover:bg-[#3b82f6] hover:text-white group transition-colors"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <IoLogoGithub className="text-sm opacity-60 group-hover:opacity-100" />
+                                    <span>Quick Look GitHub</span>
+                                </div>
+                                <IoChevronForward className="text-[10px] opacity-30" />
+                            </button>
+                        </div>
+
+                        <div className="h-px bg-white/10 mx-1.5 my-1"></div>
+
+                        {/* Secondary Actions */}
+                        <div className="py-1">
+                            <div className="px-3 py-1.5 flex items-center gap-2 text-xs text-white/40 cursor-default">
+                                <IoShareOutline className="text-sm" />
+                                <span>Share Project</span>
+                            </div>
+                            <div className="px-3 py-1.5 flex items-center gap-2 text-xs text-white/40 cursor-default">
+                                <IoDocumentOutline className="text-sm" />
+                                <span>Compress Folder</span>
+                            </div>
+                        </div>
+
+                        <div className="h-px bg-white/10 mx-1.5 my-1"></div>
+
+                        {/* Tags */}
+                        <div className="px-3 py-2 flex items-center justify-between">
+                            <div className="flex gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-white/20"></div>
+                                <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-white/20"></div>
+                                <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-white/20"></div>
+                                <div className="w-3 h-3 rounded-full bg-[#3b82f6] border border-white/20"></div>
+                            </div>
+                            <span className="text-[10px] text-white/30 font-bold">Tags...</span>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* macOS Preview Style Modal */}
             <AnimatePresence>
