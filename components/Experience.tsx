@@ -6,7 +6,7 @@ import { IoBriefcaseOutline, IoCodeOutline, IoLaptopOutline, IoTerminalOutline, 
 
 const experienceData = [
     {
-        title: "Co-Creative Head",
+        title: "Executive Co-Creative Head",
         company: "Indian Society for Technical Education",
         period: "2026 - Present",
         desc: "Spearheading creative strategy and design initiatives for technical and cultural events within the society.",
