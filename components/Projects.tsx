@@ -201,7 +201,13 @@ const Projects = () => {
 
     const folderNames = ["Design", "Web Development", "AI/ML"];
 
-    const sidebarItems = [
+    interface SidebarItem {
+        icon: React.ReactNode;
+        label: string;
+        id?: string;
+    }
+
+    const sidebarItems: { section: string; items: SidebarItem[] }[] = [
         { section: "", items: [
             { icon: <IoTimeOutline />, label: "Recents", id: "hero" },
             { icon: <IoPeopleOutline />, label: "Shared", id: "about" }
@@ -284,7 +290,7 @@ const Projects = () => {
                                     {sec.items.map((item, j) => (
                                         <div 
                                             key={j} 
-                                            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${item.id === (selectedFolder === null ? "projects" : "") ? 'bg-[#3b82f6]/20 text-[#60a5fa]' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
+                                            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${item.id && item.id === (selectedFolder === null ? "projects" : "") ? 'bg-[#3b82f6]/20 text-[#60a5fa]' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
                                             onClick={() => item.id ? scrollToSection(item.id) : null}
                                         >
                                             <span className="text-[#60a5fa] text-lg">{item.icon}</span>
