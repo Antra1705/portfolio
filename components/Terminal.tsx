@@ -133,9 +133,9 @@ const Terminal = ({ onToggleTheme, currentTheme }: { onToggleTheme?: () => void;
                 {/* Terminal Header */}
                 <div className="bg-[#FFFDE7]/10 px-4 py-3 flex items-center justify-between border-b border-[#FFFDE7]/10">
                     <div className="flex gap-2">
-                        <div className="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
-                        <div className="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
-                        <div className="w-3 h-3 rounded-full bg-[#27C93F]"></div>
+                        <div className="w-3 h-3 rounded-full bg-[#FF5F56] cursor-pointer"></div>
+                        <div className="w-3 h-3 rounded-full bg-[#FFBD2E] cursor-pointer"></div>
+                        <div className="w-3 h-3 rounded-full bg-[#27C93F] cursor-pointer"></div>
                     </div>
                     <div className="text-[10px] uppercase tracking-widest font-bold text-[#FFFDE7]/60">
                         AntraOS Terminal — zsh

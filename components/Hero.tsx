@@ -26,10 +26,10 @@ const Hero = () => {
                         Designer, Web Developer <br /> & AI Engineer
                     </p>
                     <div className="flex gap-6 mt-8">
-                        <a href="https://github.com" className="text-2xl text-[#FFFDE7]/40 hover:text-[#FFFDE7] transition-all hover:scale-110">
+                        <a href="https://github.com" className="text-2xl text-[#FFFDE7]/40 hover:text-[#FFFDE7] transition-all hover:scale-110 cursor-pointer">
                             <IoLogoGithub />
                         </a>
-                        <a href="https://linkedin.com" className="text-2xl text-[#FFFDE7]/40 hover:text-[#FFFDE7] transition-all hover:scale-110">
+                        <a href="https://linkedin.com" className="text-2xl text-[#FFFDE7]/40 hover:text-[#FFFDE7] transition-all hover:scale-110 cursor-pointer">
                             <IoLogoLinkedin />
                         </a>
                     </div>
@@ -42,7 +42,7 @@ const Hero = () => {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 1.2, duration: 0.5 }}
-                    className="mt-16 px-10 py-3 rounded-full bg-[#F2AEBC]/30 border border-[#F2AEBC]/50 text-[#FFFDE7] font-bold text-[11px] uppercase tracking-widest hover:bg-[#F2AEBC] hover:border-transparent transition-all backdrop-blur-md inline-block shadow-lg active:scale-95"
+                    className="mt-16 px-10 py-3 rounded-full bg-[#F2AEBC]/30 border border-[#F2AEBC]/50 text-[#FFFDE7] font-bold text-[11px] uppercase tracking-widest hover:bg-[#F2AEBC] hover:border-transparent transition-all backdrop-blur-md inline-block shadow-lg active:scale-95 cursor-pointer"
                 >
                     Resume
                 </motion.a>

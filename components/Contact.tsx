@@ -44,7 +44,7 @@ const Contact = () => {
                     </div>
 
                     <div className="space-y-6">
-                        <a href="mailto:antra.1705@gmail.com" className="flex items-center gap-4 group">
+                        <a href="mailto:antra.1705@gmail.com" className="flex items-center gap-4 group cursor-pointer">
                             <div className="p-2 rounded-xl bg-[#FFFDE7]/10 group-hover:bg-[#FFFDE7]/20 transition-all">
                                 <IoMailOutline className="text-xl text-[#FFFDE7]/90" />
                             </div>
@@ -53,7 +53,7 @@ const Contact = () => {
                             </span>
                         </a>
 
-                        <a href="https://linkedin.com/in/antra-dev" target="_blank" className="flex items-center gap-4 group">
+                        <a href="https://linkedin.com/in/antra-dev" target="_blank" className="flex items-center gap-4 group cursor-pointer">
                             <div className="p-2 rounded-xl bg-[#FFFDE7]/10 group-hover:bg-[#FFFDE7]/20 transition-all">
                                 <IoLogoLinkedin className="text-xl text-[#FFFDE7]/90" />
                             </div>
@@ -62,7 +62,7 @@ const Contact = () => {
                             </span>
                         </a>
 
-                        <a href="https://github.com/Antra1705" target="_blank" className="flex items-center gap-4 group">
+                        <a href="https://github.com/Antra1705" target="_blank" className="flex items-center gap-4 group cursor-pointer">
                             <div className="p-2 rounded-xl bg-[#FFFDE7]/10 group-hover:bg-[#FFFDE7]/20 transition-all">
                                 <IoLogoGithub className="text-xl text-[#FFFDE7]/90" />
                             </div>

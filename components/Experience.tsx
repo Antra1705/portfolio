@@ -57,7 +57,7 @@ const Experience = ({ theme = 'light' }: { theme?: 'light' | 'dark' }) => {
                                         transition={{ duration: 0.8, delay: idx * 0.1 }}
                                         className={`md:w-[45%] ${isOdd ? 'md:ml-auto' : 'md:mr-auto'}`}
                                     >
-                                        <div className="glass rounded-3xl p-8 hover:bg-[#FFFDE7]/10 transition-all group relative">
+                                        <div className="glass rounded-3xl p-8 hover:bg-[#FFFDE7]/10 transition-all group relative cursor-pointer">
                                             {/* Date Badge */}
                                             <div className="absolute top-8 right-8 text-[10px] font-bold py-1 px-3 bg-[#FFFDE7]/10 text-[#FFFDE7]/60 rounded-full uppercase tracking-widest">
                                                 {item.period}
