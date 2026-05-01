@@ -26,10 +26,10 @@ const Hero = () => {
                         Designer, Web Developer <br /> & AI Engineer
                     </p>
                     <div className="flex gap-6 mt-8">
-                        <a href="https://github.com" className="text-2xl text-[#FFFDE7]/40 hover:text-[#FFFDE7] transition-all hover:scale-110 cursor-pointer">
+                        <a href="https://github.com/Antra1705" className="text-2xl text-[#FFFDE7]/40 hover:text-[#FFFDE7] transition-all hover:scale-110 cursor-pointer">
                             <IoLogoGithub />
                         </a>
-                        <a href="https://linkedin.com" className="text-2xl text-[#FFFDE7]/40 hover:text-[#FFFDE7] transition-all hover:scale-110 cursor-pointer">
+                        <a href="https://www.linkedin.com/in/antra-dev" className="text-2xl text-[#FFFDE7]/40 hover:text-[#FFFDE7] transition-all hover:scale-110 cursor-pointer">
                             <IoLogoLinkedin />
                         </a>
                     </div>
