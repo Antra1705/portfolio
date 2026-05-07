@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   basePath: '/portfolio',
+  turbopack: {
+    root: __dirname,
+  },
 };
 
 export default nextConfig;

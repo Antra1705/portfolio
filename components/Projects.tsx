@@ -66,6 +66,16 @@ const projectsData = {
             title: "baisakhi.png",
             type: "image",
             src: "/portfolio/design/baisakhi.png"
+        },
+        {
+            title: "Celestia.png",
+            type: "image",
+            src: "/portfolio/design/Celestia.png"
+        },
+        {
+            title: "Quail Logo.png",
+            type: "image",
+            src: "/portfolio/design/Quail%20Logo.png"
         }
     ]
 };
