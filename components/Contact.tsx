@@ -1,160 +1,131 @@
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { IoMailOutline, IoLogoLinkedin, IoLogoGithub } from 'react-icons/io5';
+import SectionHeading from './SectionHeading';
+import FallingPetals from './FallingPetals';
+
+const EMAIL = "antra.1705@gmail.com";
+
+const links = [
+    { href: "https://linkedin.com/in/antra-dev", label: "LinkedIn" },
+    { href: "https://github.com/Antra1705", label: "GitHub" },
+    { href: "/portfolio/Antra_Resume.pdf", label: "Resume" },
+];
+
+const Heart = () => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="inline-block h-[0.75em] w-[0.75em] -translate-y-px align-baseline" role="img" aria-label="love">
+        <path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.9 4.5 6.6 4.5c2.1 0 3.6 1.2 5.4 3.2 1.8-2 3.3-3.2 5.4-3.2 3.7 0 5.7 3.9 4.2 7.3C19.5 16.4 12 21 12 21z" />
+    </svg>
+);
+
+const Tree = ({ side }: { side: 'left' | 'right' }) => {
+    const flip = side === 'left' ? -1 : 1;
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95, x: 100 * flip, scaleX: flip }}
+            whileInView={{ opacity: 1, scale: 1, x: 0, scaleX: flip }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.2, ease: "easeOut" }}
+            className="absolute bottom-0 z-10 w-[42%] max-w-[380px] pointer-events-none"
+            style={side === 'left' ? { left: '-1%' } : { right: '-1%' }}
+        >
+            {/* The PNG has ~5% transparent space under the trunk; shift it down so the roots meet the footer */}
+            <img src="/portfolio/cherryblossom.png" alt="" className="block h-auto w-full translate-y-[5.2%] drop-shadow-2xl" />
+        </motion.div>
+    );
+};
 
 const Contact = () => {
-    const [mounted, setMounted] = useState(false);
+    const [copied, setCopied] = useState(false);
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    const contactPetals = useMemo(() => {
-        if (!mounted) return [];
-        return Array.from({ length: 15 }).map((_, i) => ({
-            id: i,
-            startTop: Math.random() * 80,
-            startLeft: Math.random() * 100,
-            endLeft1: Math.random() * 100,
-            endLeft2: Math.random() * 100,
-            endTop: 95 + Math.random() * 5,
-            duration: 6 + Math.random() * 8,
-            delay: Math.random() * 10,
-        }));
-    }, [mounted]);
+    const copyEmail = async () => {
+        try {
+            await navigator.clipboard.writeText(EMAIL);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            window.location.href = `mailto:${EMAIL}`;
+        }
+    };
 
     return (
-        <section id="contact" className="relative w-full min-h-[85vh] flex flex-col justify-center overflow-hidden">
-            
-            {/* MAIN FLEX CONTAINER for the Card */}
-            <div className="relative z-10 w-full max-w-7xl mx-auto px-6 flex items-center justify-center pt-20 pb-40 overflow-visible">
-                
-                {/* Contact Card */}
-                <motion.div
-                    initial={{ opacity: 0, x: -50 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    className="w-full max-w-md glass rounded-[32px] p-10 border-[#FFFDE7]/30 backdrop-blur-3xl shadow-xl space-y-10"
-                >
-                    <div className="flex items-center gap-4">
-                        <IoMailOutline className="text-3xl text-[#FFFDE7]" />
-                        <h2 className="text-2xl font-semibold tracking-tight text-[#FFFDE7]">Contact</h2>
-                    </div>
+        <section id="contact" className="relative w-full overflow-hidden">
+            {/* Content and trees share this block, so the trees' roots sit on the footer's top edge */}
+            <div className="relative">
+                <div className="relative z-20 mx-auto max-w-[1440px] px-5 sm:px-10 pt-28 sm:pt-40 pb-[min(66vw,560px)]">
+                    <SectionHeading eyebrow="Say hello" title={<>Let’s build<br /><em>something.</em></>} />
 
-                    <div className="space-y-6">
-                        <a href="mailto:antra.1705@gmail.com" className="flex items-center gap-4 group cursor-pointer">
-                            <div className="p-2 rounded-xl bg-[#FFFDE7]/10 group-hover:bg-[#FFFDE7]/20 transition-all">
-                                <IoMailOutline className="text-xl text-[#FFFDE7]/90" />
+                    <motion.div
+                        initial={{ opacity: 0, y: 24 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: '-60px' }}
+                        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                        className="flex flex-col gap-10 md:flex-row md:items-end md:justify-between"
+                    >
+                        <div className="min-w-0">
+                            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Write to me</p>
+                            <a
+                                href={`mailto:${EMAIL}`}
+                                data-track="email-contact"
+                                className="link-underline mt-3 inline-block max-w-full [overflow-wrap:anywhere] font-display text-[clamp(1.75rem,3.6vw,3rem)] leading-[1.1] text-fg hover:text-accent"
+                            >
+                                {EMAIL}
+                            </a>
+                            <div className="mt-5">
+                                <button
+                                    type="button"
+                                    onClick={copyEmail}
+                                    data-track="copy-email"
+                                    className="inline-flex min-h-11 items-center rounded-full border border-fg/25 px-5 font-mono text-[11px] uppercase tracking-[0.18em] text-fg/80 transition-colors hover:border-accent hover:text-accent"
+                                >
+                                    <span aria-live="polite">{copied ? 'Copied ✓' : 'Copy email'}</span>
+                                </button>
                             </div>
-                            <span className="text-[15px] font-medium text-[#FFFDE7]/70 group-hover:text-[#FFFDE7] transition-colors">
-                                antra.1705@gmail.com
-                            </span>
-                        </a>
+                        </div>
 
-                        <a href="https://linkedin.com/in/antra-dev" target="_blank" className="flex items-center gap-4 group cursor-pointer">
-                            <div className="p-2 rounded-xl bg-[#FFFDE7]/10 group-hover:bg-[#FFFDE7]/20 transition-all">
-                                <IoLogoLinkedin className="text-xl text-[#FFFDE7]/90" />
-                            </div>
-                            <span className="text-[15px] font-medium text-[#FFFDE7]/70 group-hover:text-[#FFFDE7] transition-colors">
-                                www.linkedin.com/in/antra-dev
-                            </span>
-                        </a>
-
-                        <a href="https://github.com/Antra1705" target="_blank" className="flex items-center gap-4 group cursor-pointer">
-                            <div className="p-2 rounded-xl bg-[#FFFDE7]/10 group-hover:bg-[#FFFDE7]/20 transition-all">
-                                <IoLogoGithub className="text-xl text-[#FFFDE7]/90" />
-                            </div>
-                            <span className="text-[15px] font-medium text-[#FFFDE7]/70 group-hover:text-[#FFFDE7] transition-colors">
-                                https://github.com/Antra1705
-                            </span>
-                        </a>
-                    </div>
-                </motion.div>
-            </div>
-
-            {/* CHERRY BLOSSOM TREE - LEFT (flipped horizontally) */}
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95, x: -100, scaleX: -1 }}
-                whileInView={{ opacity: 1, scale: 1, x: 0, scaleX: -1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 1.2, ease: "easeOut" }}
-                className="absolute pointer-events-none z-10"
-                style={{
-                    bottom: '16px',
-                    left: '-1%',
-                    width: '50%',
-                    maxWidth: '380px',
-                }}
-            >
-                <img 
-                    src="/portfolio/cherryblossom.png" 
-                    alt="Cherry Blossom Tree" 
-                    className="w-full h-auto drop-shadow-2xl" 
-                    style={{ display: 'block' }}
-                />
-            </motion.div>
-
-            {/* CHERRY BLOSSOM TREE - RIGHT */}
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95, x: 100 }}
-                whileInView={{ opacity: 1, scale: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 1.2, ease: "easeOut" }}
-                className="absolute pointer-events-none z-10"
-                style={{
-                    bottom: '16px',
-                    right: '-1%',
-                    width: '50%',
-                    maxWidth: '380px',
-                }}
-            >
-                <img 
-                    src="/portfolio/cherryblossom.png" 
-                    alt="Cherry Blossom Tree" 
-                    className="w-full h-auto drop-shadow-2xl" 
-                    style={{ display: 'block' }}
-                />
-            </motion.div>
-
-            {/* Pink Footer Bar */}
-            <div className="absolute bottom-0 left-0 w-full bg-[#F2AEBC] py-2.5 flex justify-center items-center z-20 shadow-[0_-5px_15px_rgba(0,0,0,0.08)]">
-                <p className="text-[#FFFDE7] font-semibold text-xl tracking-tight drop-shadow-sm">
-                    made with &lt;3 by Antra
-                </p>
-            </div>
-            
-            {/* Tiny falling petals */}
-            {mounted && (
-                <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-                    {contactPetals.map((petal) => (
-                        <motion.img
-                            key={petal.id}
-                            src="/portfolio/petal.png"
-                            initial={{ 
-                                top: `${petal.startTop}%`, 
-                                left: `${petal.startLeft}%`,
-                                opacity: 0,
-                                rotate: 0
-                            }}
-                            animate={{ 
-                                left: [`${petal.endLeft1}%`, `${petal.endLeft2}%`],
-                                top: `${petal.endTop}%`,
-                                opacity: [0, 0.4, 0],
-                                rotate: 360
-                            }}
-                            transition={{ 
-                                duration: petal.duration, 
-                                repeat: Infinity,
-                                ease: "linear",
-                                delay: petal.delay
-                            }}
-                            className="absolute w-2"
-                        />
-                    ))}
+                        <ul className="flex flex-wrap gap-x-8 gap-y-1 font-mono text-[12px] uppercase tracking-[0.18em]">
+                            {links.map((link) => (
+                                <li key={link.label}>
+                                    <a
+                                        href={link.href}
+                                        data-track={`${link.label.toLowerCase()}-contact`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex min-h-11 items-center gap-1.5 text-muted transition-colors hover:text-accent"
+                                    >
+                                        {link.label} <span aria-hidden>↗</span>
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </motion.div>
                 </div>
-            )}
+
+                <Tree side="left" />
+                <Tree side="right" />
+            </div>
+
+            {/* Footer: in normal flow so the trees stand on it and it never covers content.
+                Mobile stacks the sign-off above the year/back-to-top row. */}
+            <footer className="relative z-20 grid grid-cols-2 items-center gap-x-4 gap-y-1 bg-pink px-5 sm:px-10 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-ink sm:grid-cols-3">
+                <p className="col-span-2 text-center font-display italic text-xl leading-tight sm:order-2 sm:col-span-1 sm:text-2xl">
+                    made with <Heart /> by Antra
+                </p>
+                <span className="font-mono text-[11px] uppercase tracking-[0.18em] sm:order-1">
+                    © {new Date().getFullYear()} Antra
+                </span>
+                <a
+                    href="#home"
+                    className="group -mr-3 inline-flex min-h-11 items-center gap-2 justify-self-end rounded-full px-3 font-mono text-[11px] uppercase tracking-[0.18em] transition-colors hover:bg-ink/10 sm:order-3"
+                >
+                    Back to top
+                    <span aria-hidden className="transition-transform duration-300 group-hover:-translate-y-0.5">↑</span>
+                </a>
+            </footer>
+
+            {/* Tiny falling petals */}
+            <FallingPetals variant="contained" count={14} mobileCount={8} minSize={6} maxSize={10} maxOpacity={0.5} />
         </section>
     );
 };

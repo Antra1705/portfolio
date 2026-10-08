@@ -99,12 +99,70 @@
   font-display: swap;
 }
 
+@theme {
+  --color-ink: #021D38;
+  --color-cream: #FFFDE7;
+  --color-pink: #F2AEBC;
+  --color-sky: #9BD0ED;
+  /* Theme-aware roles, redefined for light mode below */
+  --color-fg: #FFFDE7;
+  --color-accent: #F2AEBC;
+  --color-card: #FFFDE7;
+  --color-muted: #949E9E;
+  /* Terminal and Finder windows */
+  --color-panel-fg: #FFFDE7;
+  --color-finder: #3b82f6;
+  --color-finder-soft: #60a5fa;
+  --color-scrim: #000000;
+  --font-display: 'Instrument Serif', 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 :root {
   --background: #021D38;
   --foreground: #FFFDE7;
   --pink: #F2AEBC;
-  --glass-bg: rgba(255, 253, 231, 0.1);
-  --glass-border: rgba(255, 253, 231, 0.2);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --panel-bg: rgba(2, 29, 56, 0.2);
+  --finder-bg: rgba(28, 30, 32, 0.4);
+  --menu-bg: rgba(2, 29, 56, 0.85);
+  --modal-bg: rgba(2, 29, 56, 0.4);
+  --shadow-paper: 0 40px 70px -25px rgba(0, 0, 0, 0.7);
+  color-scheme: dark;
+}
+
+/* Light mode: warm paper, navy ink, and a deeper rose so accent text stays readable.
+   Pastel pink is kept for fills (buttons, marquee, stamp) where it sits behind navy text. */
+:root[data-theme="light"] {
+  --background: #F6F0E6;
+  --foreground: #021D38;
+  --pink: #B8365E;
+  --color-fg: #021D38;
+  --color-accent: #B8365E;
+  --color-card: #FFFFFF;
+  --color-muted: #566272;
+  /* Windows turn blush pink with plum text and rose highlights */
+  --color-panel-fg: #4A1730;
+  --color-finder: #C2416A;
+  --color-finder-soft: #B8365E;
+  --color-scrim: #7A3550;
+  --panel-bg: #FCE6ED;
+  --finder-bg: #FDEDF2;
+  --menu-bg: rgba(255, 246, 248, 0.97);
+  --modal-bg: rgba(253, 237, 242, 0.94);
+  --shadow-paper: 0 30px 60px -30px rgba(2, 29, 56, 0.35), 0 0 0 1px rgba(2, 29, 56, 0.06);
+  color-scheme: light;
+}
+
+.shadow-paper {
+  box-shadow: var(--shadow-paper);
+}
+
+/* Theme switch: the new theme grows out of the toggle as a circle (see Navbar) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 body {
@@ -124,6 +182,176 @@ body {
 
 * {
   scroll-behavior: smooth;
+}
+
+:focus-visible {
+  outline: 2px solid var(--pink);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+/* Falling petals: the wrapper is as tall as its container, so translateY(%) is
+   a fraction of the container height. Fall, sway and spin run on separate
+   elements with separate durations so no two petals move in lockstep. */
+.petal-fall {
+  position: absolute;
+  top: 0;
+  width: 0;
+  height: 100%;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-name: petal-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.petal-sway {
+  animation-name: petal-sway;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+.petal-spin {
+  display: block;
+  max-width: none;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 0 5px rgba(242, 174, 188, 0.3));
+  animation-name: petal-spin;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes petal-fall {
+  0% { transform: translate3d(0, -8%, 0); opacity: 0; }
+  8% { opacity: var(--petal-opacity, 0.9); }
+  88% { opacity: var(--petal-opacity, 0.9); }
+  100% { transform: translate3d(var(--drift, 0px), 105%, 0); opacity: 0; }
+}
+
+@keyframes petal-sway {
+  from { transform: translateX(calc(var(--sway, 20px) * -1)); }
+  to { transform: translateX(var(--sway, 20px)); }
+}
+
+@keyframes petal-spin {
+  0% { transform: translateX(-50%) rotate(0deg) scaleX(1); }
+  50% { transform: translateX(-50%) rotate(180deg) scaleX(0.6); }
+  100% { transform: translateX(-50%) rotate(360deg) scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .petals { display: none; }
+}
+
+/* ---------- Texture ---------- */
+
+/* Film grain over the whole page so the flat navy reads as paper, not a template */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  opacity: 0.09;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+:root[data-theme="light"] .grain {
+  mix-blend-mode: multiply;
+  opacity: 0.06;
+}
+
+/* Backdrop inside the About polaroid */
+.portrait-bg {
+  background:
+    radial-gradient(circle at 30% 20%, rgba(242, 174, 188, 0.4), transparent 55%),
+    radial-gradient(circle at 80% 90%, rgba(155, 208, 237, 0.3), transparent 55%),
+    #021D38;
+}
+
+:root[data-theme="light"] .portrait-bg {
+  background:
+    radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.7), transparent 50%),
+    radial-gradient(circle at 80% 90%, rgba(232, 128, 160, 0.45), transparent 60%),
+    linear-gradient(160deg, #FBDDE6, #F2B5C5);
+}
+
+/* ---------- Hero ---------- */
+
+/* Letters of the name lift and turn into an outline on hover */
+.hero-letter {
+  display: inline-block;
+  transition: transform 0.6s var(--ease-out-expo), color 0.3s ease, -webkit-text-stroke-color 0.3s ease;
+  -webkit-text-stroke: 2px transparent;
+}
+
+.hero-letter:hover {
+  transform: translateY(-6%);
+  color: transparent;
+  -webkit-text-stroke-color: var(--pink);
+}
+
+/* Underline that wipes away on hover and back in on leave */
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 100% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.5s var(--ease-out-expo), color 0.3s ease;
+}
+
+.link-underline:hover {
+  background-size: 0% 1px;
+  background-position: 100% 100%;
+}
+
+/* Rotating text ring on the patent stamp */
+.stamp-spin {
+  animation: stamp-spin 18s linear infinite;
+}
+
+@keyframes stamp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Pointer ---------- */
+
+/* Ring that trails the pointer; CursorGlow moves .cursor-ring and toggles .is-hover */
+.cursor-ring {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  will-change: transform;
+}
+
+.cursor-ring span {
+  display: block;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--pink) 70%, transparent);
+  transition: transform 0.4s var(--ease-out-expo), background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.cursor-ring.is-hover span {
+  transform: scale(1.9);
+  background-color: color-mix(in srgb, var(--pink) 12%, transparent);
+  border-color: color-mix(in srgb, var(--pink) 35%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp-spin {
+    animation: none;
+  }
+  .hero-letter {
+    transition: none;
+  }
 }
 
 ::-webkit-scrollbar {

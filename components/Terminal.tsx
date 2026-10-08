@@ -22,7 +22,7 @@ const TerminalLine = ({ text, delay = 0, speed = 0.02 }: { text: string; delay?:
     return <span>{displayedText}</span>;
 };
 
-const Terminal = ({ onToggleTheme, currentTheme }: { onToggleTheme?: () => void; currentTheme?: 'light' | 'dark' }) => {
+const Terminal = ({ onToggleTheme, currentTheme }: { onToggleTheme?: (origin?: { x: number; y: number }) => void; currentTheme?: 'light' | 'dark' }) => {
     const [history, setHistory] = useState<string[]>([]);
     const [input, setInput] = useState("");
     const [isIntroFinished, setIsIntroFinished] = useState(false);
@@ -69,6 +69,7 @@ const Terminal = ({ onToggleTheme, currentTheme }: { onToggleTheme?: () => void;
                     "  about       - Go to About Me section",
                     "  experience  - Go to Experience section",
                     "  skills      - Go to Skills section",
+                    "  patents     - Go to Patents section",
                     "  projects    - Go to Projects section",
                     "  contact     - Go to Contact section",
                     "  clear       - Clear the terminal history"
@@ -86,6 +87,7 @@ const Terminal = ({ onToggleTheme, currentTheme }: { onToggleTheme?: () => void;
             case 'about':
             case 'experience':
             case 'skills':
+            case 'patents':
             case 'projects':
             case 'contact':
                 const section = document.getElementById(cleanCmd);
@@ -116,7 +118,7 @@ const Terminal = ({ onToggleTheme, currentTheme }: { onToggleTheme?: () => void;
     };
 
     const focusInput = () => {
-        inputRef.current?.focus();
+        inputRef.current?.focus({ preventScroll: true });
     };
 
     return (
@@ -127,17 +129,17 @@ const Terminal = ({ onToggleTheme, currentTheme }: { onToggleTheme?: () => void;
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
                 onClick={focusInput}
-                className="w-full max-w-3xl glass rounded-xl overflow-hidden shadow-2xl border-[#FFFDE7]/10 cursor-text"
-                style={{ background: currentTheme === 'light' ? 'rgba(155, 208, 237, 0.15)' : 'rgba(2, 29, 56, 0.2)' }}
+                className="w-full max-w-3xl rounded-xl overflow-hidden shadow-2xl border border-panel-fg/10 backdrop-blur-xl cursor-text"
+                style={{ background: 'var(--panel-bg)' }}
             >
                 {/* Terminal Header */}
-                <div className="bg-[#FFFDE7]/10 px-4 py-3 flex items-center justify-between border-b border-[#FFFDE7]/10">
+                <div className="bg-panel-fg/10 px-4 py-3 flex items-center justify-between border-b border-panel-fg/10">
                     <div className="flex gap-2">
                         <div className="w-3 h-3 rounded-full bg-[#FF5F56] cursor-pointer"></div>
                         <div className="w-3 h-3 rounded-full bg-[#FFBD2E] cursor-pointer"></div>
                         <div className="w-3 h-3 rounded-full bg-[#27C93F] cursor-pointer"></div>
                     </div>
-                    <div className="text-[10px] uppercase tracking-widest font-bold text-[#FFFDE7]/60">
+                    <div className="text-[10px] uppercase tracking-widest font-bold text-panel-fg/60">
                         AntraOS Terminal — zsh
                     </div>
                     <div className="w-12"></div>
@@ -149,25 +151,25 @@ const Terminal = ({ onToggleTheme, currentTheme }: { onToggleTheme?: () => void;
                     className="p-6 font-mono text-[13px] leading-relaxed max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#F2AEBC]/30"
                 >
                     {/* Startup Logs */}
-                    <div className="text-[#FFFDE7] mb-1 drop-shadow-sm font-semibold">
+                    <div className="text-panel-fg mb-1 drop-shadow-sm font-semibold">
                         <TerminalLine text="Welcome to AntraOS v1.1.0 (Interactive Mode)" />
                     </div>
                     
                     {showSecondLine && (
-                        <div className="text-[#FFFDE7]/80 mb-1 drop-shadow-sm">
+                        <div className="text-panel-fg/80 mb-1 drop-shadow-sm">
                             <TerminalLine text="> Loading portfolio modules..." />
                         </div>
                     )}
 
                     {showThirdLine && (
-                        <div className="text-[#FFFDE7]/80 mb-4 drop-shadow-sm">
+                        <div className="text-panel-fg/80 mb-4 drop-shadow-sm">
                             <TerminalLine text="> System status: ALL SYSTEMS ONLINE" />
                         </div>
                     )}
 
                     {/* History */}
                     {history.map((line, i) => (
-                        <div key={i} className={`mb-1 drop-shadow-sm ${line.startsWith('user@') ? 'text-[#F2AEBC]' : 'text-[#FFFDE7]/90'}`}>
+                        <div key={i} className={`mb-1 drop-shadow-sm ${line.startsWith('user@') ? 'text-accent' : 'text-panel-fg/90'}`}>
                             {line}
                         </div>
                     ))}
@@ -175,27 +177,26 @@ const Terminal = ({ onToggleTheme, currentTheme }: { onToggleTheme?: () => void;
                     {/* Active Prompt */}
                     {isIntroFinished && (
                         <form onSubmit={handleSubmit} className="flex items-center gap-2 group">
-                            <span className="text-[#F2AEBC] font-bold shrink-0">user@antra-dev:~$</span>
+                            <span className="text-accent font-bold shrink-0">user@antra-dev:~$</span>
                             <div className="relative flex-grow flex items-center">
                                 <input 
                                     ref={inputRef}
                                     type="text"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
-                                    autoFocus
                                     spellCheck={false}
                                     className="absolute inset-0 opacity-0 cursor-default bg-transparent outline-none border-none caret-transparent"
                                 />
-                                <span className="text-[#FFFDE7] z-10">{input}</span>
+                                <span className="text-panel-fg z-10">{input}</span>
                                 {!input && (
-                                    <span className="absolute left-0 text-[#FFFDE7]/30 italic pointer-events-none">
+                                    <span className="absolute left-0 text-panel-fg/30 italic pointer-events-none">
                                         Type 'help' for commands...
                                     </span>
                                 )}
                                 <motion.span
                                     animate={{ opacity: [1, 0, 1] }}
                                     transition={{ repeat: Infinity, duration: 0.8 }}
-                                    className="inline-block w-2 h-4 bg-[#FFFDE7] ml-0.5 shadow-sm"
+                                    className="inline-block w-2 h-4 bg-panel-fg ml-0.5 shadow-sm"
                                 />
                             </div>
                         </form>

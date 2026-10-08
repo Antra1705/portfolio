@@ -1,74 +1,119 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
 
 interface Petal {
   id: number;
   x: number;
-  delay: number;
-  duration: number;
   size: number;
-  rotation: number;
+  fall: number;
+  fallDelay: number;
   drift: number;
+  sway: number;
+  swayDuration: number;
+  swayDelay: number;
+  spin: number;
+  spinDirection: 'normal' | 'reverse';
+  spinDelay: number;
+  opacity: number;
 }
 
-const FallingPetals = () => {
-  const [mounted, setMounted] = useState(false);
+interface FallingPetalsProps {
+  // 'fixed' covers the viewport; 'contained' fills the nearest positioned parent
+  variant?: 'fixed' | 'contained';
+  count?: number;
+  mobileCount?: number;
+  minSize?: number;
+  maxSize?: number;
+  maxOpacity?: number;
+  className?: string;
+}
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
-  const petals = useMemo<Petal[]>(() => {
-    if (!mounted) return [];
-    return Array.from({ length: 30 }).map((_, i) => ({
+const createPetals = (count: number, minSize: number, maxSize: number, maxOpacity: number): Petal[] =>
+  Array.from({ length: count }).map((_, i): Petal => {
+    const fall = rand(14, 24);
+    const swayDuration = rand(3, 6);
+    const spin = rand(6, 12);
+    return {
       id: i,
-      x: Math.random() * 100,
-      delay: i * 0.8 + Math.random() * 2, // Staggered delays to prevent clumping
-      duration: 12 + Math.random() * 8, // More consistent duration
-      size: 8 + Math.random() * 12,
-      rotation: Math.random() * 360,
-      drift: Math.random() * 30 - 15,
-    }));
-  }, [mounted]);
+      // One column per petal with jitter, so petals never stack on the same x
+      x: ((i + rand(0.15, 0.85)) / count) * 100,
+      size: rand(minSize, maxSize),
+      fall,
+      // Negative delay starts each petal part-way through its fall, so they are
+      // spread over the screen on load instead of all dropping from the top together
+      fallDelay: -rand(0, fall),
+      drift: rand(-40, 40),
+      sway: rand(15, 35),
+      swayDuration,
+      swayDelay: -rand(0, swayDuration),
+      spin,
+      spinDelay: -rand(0, spin),
+      spinDirection: Math.random() > 0.5 ? 'normal' : 'reverse',
+      opacity: rand(maxOpacity * 0.6, maxOpacity),
+    };
+  }).sort(() => Math.random() - 0.5);
 
-  if (!mounted) return null;
+const FallingPetals = ({
+  variant = 'fixed',
+  count = 26,
+  mobileCount = 12,
+  minSize = 8,
+  maxSize = 18,
+  maxOpacity = 0.9,
+  className = '',
+}: FallingPetalsProps) => {
+  // Generated once on the client (the page only renders after mount), so the
+  // random layout is stable across re-renders such as a theme toggle
+  const [petals] = useState<Petal[]>(() => {
+    if (typeof window === 'undefined') return [];
+    const isMobile = window.matchMedia('(max-width: 640px)').matches;
+    return createPetals(isMobile ? mobileCount : count, minSize, maxSize, maxOpacity);
+  });
+
+  if (!petals.length) return null;
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      <AnimatePresence>
-        {petals.map((petal) => (
-          <motion.img
-            key={petal.id}
-            src="/portfolio/petal.png"
-            alt=""
-            initial={{ 
-              top: '-10%', 
-              left: `${petal.x}%`, 
-              opacity: 0,
-              rotate: petal.rotation
-            }}
-            animate={{ 
-              top: '110%', 
-              left: `${petal.x + petal.drift}%`,
-              opacity: [0, 1, 1, 0],
-              rotate: petal.rotation + 90
-            }}
-            transition={{ 
-              duration: petal.duration, 
-              delay: petal.delay,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-            style={{ 
-              width: petal.size,
-              position: 'absolute',
-              filter: 'drop-shadow(0 0 5px rgba(242, 174, 188, 0.3))'
-            }}
-          />
-        ))}
-      </AnimatePresence>
+    <div
+      aria-hidden
+      className={`petals ${variant === 'fixed' ? 'fixed' : 'absolute'} inset-0 pointer-events-none overflow-hidden z-0 ${className}`}
+    >
+      {petals.map((petal) => (
+        <div
+          key={petal.id}
+          className="petal-fall"
+          style={{
+            left: `${petal.x}%`,
+            animationDuration: `${petal.fall}s`,
+            animationDelay: `${petal.fallDelay}s`,
+            '--drift': `${petal.drift}px`,
+            '--petal-opacity': petal.opacity,
+          } as React.CSSProperties}
+        >
+          <div
+            className="petal-sway"
+            style={{
+              animationDuration: `${petal.swayDuration}s`,
+              animationDelay: `${petal.swayDelay}s`,
+              '--sway': `${petal.sway}px`,
+            } as React.CSSProperties}
+          >
+            <img
+              src="/portfolio/petal.png"
+              alt=""
+              className="petal-spin"
+              style={{
+                width: petal.size,
+                animationDuration: `${petal.spin}s`,
+                animationDirection: petal.spinDirection,
+                animationDelay: `${petal.spinDelay}s`,
+              }}
+            />
+          </div>
+        </div>
+      ))}
     </div>
   );
 };

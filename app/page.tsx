@@ -1,31 +1,63 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import Terminal from '../components/Terminal';
 import About from '../components/About';
 import Experience from '../components/Experience';
 import Skills from '../components/Skills';
+import Patents from '../components/Patents';
 import Projects from '../components/Projects';
 import Contact from '../components/Contact';
 import FallingPetals from '../components/FallingPetals';
+import CursorGlow from '../components/CursorGlow';
+import ScrollProgress from '../components/ScrollProgress';
+import Marquee from '../components/Marquee';
+import Analytics from '../components/Analytics';
+import { MotionConfig } from 'framer-motion';
 
 export default function Home() {
     const [mounted, setMounted] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
-    const toggleTheme = () => {
-        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    const applyTheme = (next: 'light' | 'dark') => {
+        document.documentElement.dataset.theme = next;
+        try { localStorage.setItem('theme', next); } catch {}
+    };
+
+    // `origin` is the point the new theme grows out of (the toggle button);
+    // without it, or without View Transitions, the theme just swaps.
+    const toggleTheme = (origin?: { x: number; y: number }) => {
+        const next = theme === 'light' ? 'dark' : 'light';
+        const swap = () => {
+            applyTheme(next);
+            flushSync(() => setTheme(next));
+        };
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!document.startViewTransition || reduced) {
+            swap();
+            return;
+        }
+        const x = origin?.x ?? window.innerWidth / 2;
+        const y = origin?.y ?? window.innerHeight / 2;
+        const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+        document.startViewTransition(swap).ready.then(() => {
+            document.documentElement.animate(
+                { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+                { duration: 700, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', pseudoElement: '::view-transition-new(root)' }
+            );
+        });
     };
 
     useEffect(() => {
-        const root = document.documentElement;
-        const color = theme === 'light' ? '#9BD0ED' : '#021D38';
-        root.style.setProperty('--background', color);
-    }, [theme]);
-
-    useEffect(() => {
+        let saved: string | null = null;
+        try { saved = localStorage.getItem('theme'); } catch {}
+        if (saved === 'light' || saved === 'dark') {
+            setTheme(saved);
+            document.documentElement.dataset.theme = saved;
+        }
         setMounted(true);
         window.scrollTo(0, 0);
     }, []);
@@ -33,27 +65,31 @@ export default function Home() {
     if (!mounted) return null;
 
     return (
-        <div 
-            className="relative min-h-screen transition-colors duration-700 text-[#FFFDE7] overflow-x-hidden"
-            style={{ backgroundColor: theme === 'light' ? '#9BD0ED' : '#021D38' }}
-        >
-            {/* Background Animations */}
-            <FallingPetals />
-            
-            {/* Main Content */}
-            <Navbar />
-            <main className="relative z-10 flex flex-col items-center w-full">
-                <Hero />
-                <Terminal onToggleTheme={toggleTheme} currentTheme={theme} />
-                <About />
-                <Skills />
-                <Experience theme={theme} />
-                <Projects />
-                <Contact />
-            </main>
+        <MotionConfig reducedMotion="user">
+            <div className="relative min-h-screen bg-(--background) text-fg overflow-x-hidden">
+                {/* Background Animations */}
+                <FallingPetals />
+                <CursorGlow />
+                <ScrollProgress />
+                <Analytics />
+                
+                {/* Main Content */}
+                <Navbar theme={theme} onToggleTheme={toggleTheme} />
+                <main className="relative z-10 flex flex-col items-center w-full">
+                    <Hero />
+                    <Marquee />
+                    <Terminal onToggleTheme={toggleTheme} currentTheme={theme} />
+                    <About />
+                    <Skills />
+                    <Experience />
+                    <Patents />
+                    <Projects />
+                    <Contact />
+                </main>
 
-            {/* Bottom Accent Decor */}
-            <div className="fixed bottom-0 left-0 w-full h-1 bg-[#F2AEBC] z-50 pointer-events-none opacity-50" />
-        </div>
+                {/* Paper grain over everything */}
+                <div aria-hidden className="grain" />
+            </div>
+        </MotionConfig>
     );
 }
