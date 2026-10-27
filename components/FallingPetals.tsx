@@ -1,6 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+
+// The 3D petals need three.js (~600 KB), so they load after the page is idle;
+// until then (and without WebGL) the lightweight CSS petals below are shown
+const Petals3D = dynamic(() => import('./Petals3D'), { ssr: false });
+
+const hasWebGL = () => {
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(canvas.getContext('webgl2') || canvas.getContext('webgl'));
+  } catch {
+    return false;
+  }
+};
 
 interface Petal {
   id: number;
@@ -67,11 +81,27 @@ const FallingPetals = ({
 }: FallingPetalsProps) => {
   // Generated once on the client (the page only renders after mount), so the
   // random layout is stable across re-renders such as a theme toggle
+  const [isMobile] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches);
   const [petals] = useState<Petal[]>(() => {
     if (typeof window === 'undefined') return [];
-    const isMobile = window.matchMedia('(max-width: 640px)').matches;
     return createPetals(isMobile ? mobileCount : count, minSize, maxSize, maxOpacity);
   });
+  const [load3d, setLoad3d] = useState(false); // start fetching the 3D layer
+  const [ready3d, setReady3d] = useState(false); // 3D petals are drawing
+  // With WebGL the petals come from the hero branch, so the CSS fallback (which
+  // falls from the top of the screen) is only for browsers without it
+  const [cssFallback] = useState(() => typeof window !== 'undefined' && !hasWebGL());
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !hasWebGL()) return;
+    const start = () => setLoad3d(true);
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(start, { timeout: 3000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = setTimeout(start, 1500);
+    return () => clearTimeout(id);
+  }, []);
 
   if (!petals.length) return null;
 
@@ -80,7 +110,16 @@ const FallingPetals = ({
       aria-hidden
       className={`petals ${variant === 'fixed' ? 'fixed' : 'absolute'} inset-0 pointer-events-none overflow-hidden z-0 ${className}`}
     >
-      {petals.map((petal) => (
+      {load3d && (
+        <Petals3D
+          perScreen={isMobile ? 9 : 16}
+          minSize={minSize * 1.6}
+          maxSize={maxSize * 1.6}
+          opacity={maxOpacity}
+          onReady={() => setReady3d(true)}
+        />
+      )}
+      {cssFallback && !ready3d && petals.map((petal) => (
         <div
           key={petal.id}
           className="petal-fall"
@@ -100,6 +139,7 @@ const FallingPetals = ({
               '--sway': `${petal.sway}px`,
             } as React.CSSProperties}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element -- static export with images.unoptimized: next/image would add nothing here */}
             <img
               src="/portfolio/petal.png"
               alt=""

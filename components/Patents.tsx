@@ -33,9 +33,9 @@ const Stamp = ({ id, label }: { id: string; label: string }) => (
 
 const Patents = () => {
     return (
-        <section id="patents" className="w-full px-5 sm:px-10 py-28 sm:py-40">
+        <section id="patents" className="w-full px-5 sm:px-10 pt-6 pb-28 sm:pt-10 sm:pb-40">
             <div className="mx-auto max-w-[1360px]">
-                <SectionHeading eyebrow="What I've invented" title={<>Patent<em>ed</em></>} />
+                <SectionHeading title={<>Patent<em>ed</em></>} />
 
                 {patentsData.map((item) => (
                     <motion.article

@@ -55,7 +55,8 @@ const Marquee = () => {
     );
 
     return (
-        <div aria-hidden className="relative w-full overflow-hidden py-10 sm:py-16">
+        // clipped at the sides only, so the band's glow can fade out fully below it
+        <div aria-hidden className="relative w-full overflow-x-clip py-10 sm:py-16">
             <div className="-rotate-2 scale-[1.04] bg-pink py-4 sm:py-5 text-ink shadow-[0_30px_60px_-30px_rgba(242,174,188,0.6)]">
                 <motion.div style={{ x }} className="flex w-max">
                     {row}

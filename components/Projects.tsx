@@ -1,681 +1,437 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    IoFolderOpenOutline, IoLogoGithub, IoOpenOutline, 
-    IoChevronBack, IoChevronForward,
-    IoSearch, IoTimeOutline, IoPeopleOutline, IoAppsOutline,
-    IoDesktopOutline, IoDocumentOutline, IoCloudOutline,
-    IoBluetoothOutline, IoGlobeOutline, IoTrashOutline,
-    IoDownloadOutline, IoGridOutline, IoListOutline,
-    IoFolder, IoPersonOutline, IoBriefcaseOutline, IoExtensionPuzzleOutline,
-    IoMailOutline, IoHomeOutline, IoBulbOutline, IoClose, IoShareOutline, IoScanOutline, IoTextOutline, IoCreateOutline
-} from 'react-icons/io5';
+import { AnimatePresence, motion } from 'framer-motion';
+import { IoArrowForward, IoClose, IoExpandOutline, IoLogoGithub } from 'react-icons/io5';
 import SectionHeading from './SectionHeading';
+import Sakura from './Sakura';
+import { GROUPS, inGroup, works, type Group, type Work } from './projectsData';
 
-const projectsData = {
-    "Web Development": [
-        {
-            title: "AlgoRacer",
-            type: "project",
-            desc: "A high-performance algorithm visualizer featuring real-time racing simulations for sorting and pathfinding algorithms.",
-            tech: ["Vite", "React", "Tailwind", "Algorithms"],
-            link: "https://antra1705.github.io/AlgoRacer/",
-            github: "https://github.com/Antra1705/AlgoRacer"
-        },
-        {
-            title: "CSS-Lab",
-            type: "project",
-            desc: "An interactive environment for experimenting with advanced CSS layouts, animations, and modern UI components.",
-            tech: ["React", "Tailwind", "CSS3", "Vercel"],
-            link: "https://css-lab-pi.vercel.app/",
-            github: "https://github.com/shivamsaini124/CSS-Lab"
-        },
-        {
-            title: "TradeDash",
-            type: "project",
-            desc: "A high-fidelity clone of the Zerodha trading platform, featuring interactive dashboards, real-time charts, and order placement logic.",
-            tech: ["React", "Express", "Node.js", "Socket.io"],
-            link: "https://zerodha-clone-antra.vercel.app/",
-            github: "https://github.com/Antra1705/ZerodhaClone"
-        },
-        {
-            title: "ApiForge",
-            type: "project",
-            desc: "A powerful API design and debugging platform that allows developers to forge, test, and document RESTful endpoints with ease.",
-            tech: ["Next.js", "Javascript", "Tailwind", "API Forge"],
-            link: "https://api-forge-js.vercel.app/",
-            github: "https://github.com/Antra1705/ApiForge"
-        },
-        {
-            title: "Discord Orchestrator",
-            type: "project",
-            desc: "A comprehensive discord server moderation system designed for automated user management, role assignment, and community orchestration.",
-            tech: ["Node.js", "Discord.js", "Automation", "Security"],
-            github: "https://github.com/SIDDHESH-2006/DiscordServerModerationOrchestrator"
-        }
-    ],
-    "AI/ML": [
-        {
-            title: "PosePulse",
-            type: "project",
-            desc: "A real-time AI gym coach that tracks your form through the webcam, counts reps, and gives live voice feedback while you train.",
-            tech: ["Next.js", "FastAPI", "MediaPipe", "Groq LLM"],
-            link: "https://pose-pulse-five.vercel.app",
-            github: "https://github.com/Antra1705/PosePulse"
-        },
-        {
-            title: "SnapClass",
-            type: "project",
-            desc: "An AI-powered attendance system that marks a whole class from a single photo using face recognition, with voice biometrics for roll-call.",
-            tech: ["Python", "Computer Vision", "Resemblyzer", "Flask"],
-            link: "https://snapclass-landing-page-three.vercel.app",
-            github: "https://github.com/Antra1705/snapclass-landing-page"
-        }
-    ],
-    "Design": [
-        {
-            title: "AkshayaTritiya.png",
-            type: "image",
-            src: "/portfolio/design/AkshayaTritiya.png"
-        },
-        {
-            title: "baisakhi.png",
-            type: "image",
-            src: "/portfolio/design/baisakhi.png"
-        },
-        {
-            title: "Celestia.png",
-            type: "image",
-            src: "/portfolio/design/Celestia.png"
-        },
-        {
-            title: "Quail Logo.png",
-            type: "image",
-            src: "/portfolio/design/Quail%20Logo.png"
-        }
-    ]
+// Things I've built: paper lanterns hanging from an ink sakura branch, like the
+// hero's, one per piece of work, in three clusters, each kind with its own
+// lantern: round pink ones for the web, tall blue ones for AI & ML, small gold
+// globes for design. Light one and a scroll unrolls beneath with the piece.
+
+const ease = [0.16, 1, 0.3, 1] as const;
+const two = (n: number) => String(n).padStart(2, '0');
+const ext = { target: '_blank', rel: 'noopener noreferrer' } as const;
+type View = (w: Work, e: React.MouseEvent<HTMLElement>) => void;
+
+// Each kind of work: its lantern's shape, its paper (unlit and lit, light to
+// dark), the colour of its ribs and glow, and an ink dark enough to read on washi
+type Kind = { slug: string; shape: 'round' | 'tall' | 'globe'; unlit: string[]; lit: string[]; rib: string; glow: string; dot: string; ink: string };
+const KIND: Record<Group, Kind> = {
+    Web: { slug: 'web', shape: 'round', unlit: ['#EFB0BC', '#D98293'], lit: ['#FFF5F7', '#F7BCC8', '#E3889F'], rib: '#9E4A60', glow: 'rgba(242, 174, 188, 0.55)', dot: '#F2AEBC', ink: '#B8365E' },
+    'AI & ML': { slug: 'ai', shape: 'tall', unlit: ['#B3D2DF', '#7FA9BD'], lit: ['#F4FCFF', '#BFE3EC', '#86BDD3'], rib: '#3E7E99', glow: 'rgba(170, 220, 240, 0.55)', dot: '#9BD0ED', ink: '#2F6F8F' },
+    Design: { slug: 'design', shape: 'globe', unlit: ['#EBD09A', '#C9A35C'], lit: ['#FFFBEA', '#FFE3A3', '#E8C170'], rib: '#8C6A2A', glow: 'rgba(255, 227, 163, 0.55)', dot: '#FFE3A3', ink: '#8A5D0B' },
 };
 
-const BlueFolder = ({ size = "text-[100px]" }: { size?: string }) => (
-    <div className={`relative ${size} flex items-center justify-center`}>
-        <IoFolder className="text-finder filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/2 h-1/2 bg-panel-fg/5 rounded-full blur-xl"></div>
+// ---------------------------------------------------------------------------
+// Pictures, buttons and the viewer
+
+// Discord Orchestrator has no site to photograph, so it gets a drawn moderation log
+const ModLog = ({ className = '', label }: { className?: string; label: string }) => (
+    <span role="img" aria-label={label} className={`flex flex-col justify-center gap-[0.7em] bg-[#2B2D31] px-[8%] font-mono leading-snug text-[#DBDEE1] [container-type:inline-size] ${className}`}>
+        <span className="block text-[4.4cqw] text-[#949BA4]"># mod-log</span>
+        <span className="block text-[4.4cqw]"><b className="text-[#A5B4FC]">Orchestrator</b> gave <span className="text-[#57F287]">@new-member</span> the Member role</span>
+        <span className="block text-[4.4cqw]"><b className="text-[#A5B4FC]">Orchestrator</b> verified 24 users</span>
+        <span className="block text-[4.4cqw]"><b className="text-[#A5B4FC]">Orchestrator</b> timed out <span className="text-[#ED4245]">@spam-bot</span> · 10m</span>
+    </span>
+);
+
+// A piece's picture: a screenshot, the design itself, or the drawn log
+const Shot = ({ w, className = '' }: { w: Work; className?: string }) =>
+    w.image ? (
+        // eslint-disable-next-line @next/next/no-img-element -- a static export, so images are served as they are
+        <img src={w.image} alt={w.alt} loading="lazy" className={`${className} ${w.contain ? 'bg-[#1B2334] object-contain p-[8%]' : 'object-cover object-top'}`} />
+    ) : (
+        <ModLog className={className} label={w.alt} />
+    );
+
+// The site's buttons: a pink pill for the live site (or a larger view), an outline for the code
+const pill = 'inline-flex min-h-11 items-center gap-2 rounded-full px-5 text-[13px] font-bold uppercase tracking-[0.1em] transition-[transform,color,border-color] duration-300';
+const Buttons = ({ w, onView }: { w: Work; onView: View }) => (
+    <div className="flex flex-wrap gap-3">
+        {w.link && (
+            <a href={w.link} {...ext} className={`${pill} bg-pink text-ink hover:-translate-y-0.5`}>
+                Visit the site <IoArrowForward className="-rotate-45" />
+            </a>
+        )}
+        {w.github && (
+            <a href={w.github} {...ext} className={`${pill} border border-[#2A211B]/30 text-[#2A211B] hover:border-[#B8365E] hover:text-[#B8365E]`}>
+                <IoLogoGithub /> Code
+            </a>
+        )}
+        {w.full && (
+            <button type="button" onClick={(e) => onView(w, e)} className={`${pill} cursor-pointer bg-pink text-ink hover:-translate-y-0.5`}>
+                <IoExpandOutline /> View it larger
+            </button>
+        )}
     </div>
 );
 
-const PreviewModal = ({ isOpen, image, onClose }: { isOpen: boolean; image: string | null; onClose: () => void }) => {
-    if (!isOpen || !image) return null;
+// A design piece, viewed larger
+const Viewer = ({ w, onClose }: { w: Work; onClose: () => void }) => {
+    const closeRef = useRef<HTMLButtonElement>(null);
+    // the latest onClose, so the setup below runs once however often the parent renders
+    const latestClose = useRef(onClose);
+    useEffect(() => {
+        latestClose.current = onClose;
+    });
+    useEffect(() => {
+        closeRef.current?.focus();
+        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && latestClose.current();
+        window.addEventListener('keydown', onKey);
+        const overflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            window.removeEventListener('keydown', onKey);
+            document.body.style.overflow = overflow;
+        };
+    }, []);
 
-    const toolbarIcons = [
-        { icon: <IoScanOutline />, label: "Selection" },
-        { icon: <IoCreateOutline />, label: "Sketch" },
-        { icon: <IoTextOutline />, label: "Text" },
-        { icon: <IoPersonOutline />, label: "Sign" },
-        { icon: <IoAppsOutline />, label: "Shapes" },
-    ];
-
-    return (
-        <motion.div 
+    return createPortal(
+        <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label={w.title}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-scrim/40 backdrop-blur-sm"
             onClick={onClose}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-5 backdrop-blur-sm sm:p-10"
         >
-            <motion.div 
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                className="relative max-w-5xl w-full rounded-[18px] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.5)] border border-panel-fg/10 flex flex-col backdrop-blur-3xl"
-                onClick={e => e.stopPropagation()}
-                style={{ 
-                    maxHeight: '90vh',
-                    background: 'var(--modal-bg)'
-                }}
+            <motion.figure
+                initial={{ y: 24, scale: 0.97 }}
+                animate={{ y: 0, scale: 1 }}
+                exit={{ y: 12, opacity: 0 }}
+                transition={{ duration: 0.35, ease }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative flex max-h-full w-full max-w-[880px] flex-col rounded-[14px] bg-[#FFFDF7] p-3 shadow-[0_40px_80px_-30px_rgba(0,0,0,0.8)]"
             >
-                {/* Main Header */}
-                <div className="bg-panel-fg/10 px-4 py-2.5 flex items-center justify-between border-b border-panel-fg/10">
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="flex gap-2 items-center">
-                            <button onClick={onClose} className="w-3.5 h-3.5 rounded-full bg-[#FF5F56] flex items-center justify-center group cursor-pointer">
-                                <IoClose className="text-[10px] text-black/40 opacity-0 group-hover:opacity-100" />
-                            </button>
-                            <div className="w-3.5 h-3.5 rounded-full bg-[#FFBD2E] cursor-pointer"></div>
-                            <div className="w-3.5 h-3.5 rounded-full bg-[#27C93F] cursor-pointer"></div>
-                        </div>
-                        <div className="hidden sm:flex items-center bg-panel-fg/10 rounded-md px-2 py-1 gap-1 ml-2">
-                            <IoGridOutline className="text-panel-fg/60 text-xs" />
-                            <IoChevronForward className="text-panel-fg/30 text-[10px] rotate-90" />
-                        </div>
-                        <span className="text-[13px] font-medium text-panel-fg/90 truncate ml-2">
-                            {image.split('/').pop()}
-                        </span>
-                    </div>
-
-                    <div className="hidden sm:flex items-center gap-3">
-                        <div className="flex items-center bg-panel-fg/10 rounded-md px-1 py-1">
-                            <button className="px-2 py-0.5 text-panel-fg/60 hover:text-panel-fg cursor-pointer"><IoSearch className="text-sm scale-x-[-1]" /></button>
-                            <div className="w-px h-3 bg-panel-fg/10"></div>
-                            <button className="px-2 py-0.5 text-panel-fg/60 hover:text-panel-fg cursor-pointer"><span className="text-[10px] font-bold">1:1</span></button>
-                            <div className="w-px h-3 bg-panel-fg/10"></div>
-                            <button className="px-2 py-0.5 text-panel-fg/60 hover:text-panel-fg cursor-pointer"><IoSearch className="text-sm" /></button>
-                        </div>
-                        <button className="p-1.5 bg-finder rounded-md text-white shadow-inner cursor-pointer"><IoCreateOutline className="text-base" /></button>
-                        <button className="p-1.5 hover:bg-panel-fg/10 rounded-md text-panel-fg/60 cursor-pointer"><IoScanOutline className="text-base" /></button>
-                        <div className="w-px h-6 bg-panel-fg/10 mx-1"></div>
-                        <button className="p-1.5 hover:bg-panel-fg/10 rounded-md text-panel-fg/60 cursor-pointer"><IoChevronForward className="text-lg" /></button>
-                        <button className="p-1.5 hover:bg-panel-fg/10 rounded-md text-panel-fg/60 cursor-pointer"><IoSearch className="text-lg" /></button>
-                    </div>
+                <div className={`min-h-0 overflow-hidden rounded-[8px] ${w.tall ? 'overflow-y-auto overscroll-contain' : 'flex justify-center'} ${w.contain ? 'bg-[#1B2334] p-8' : 'bg-[#2A2A35]'}`} style={{ maxHeight: 'calc(100svh - 10rem)' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- a static export, so images are served as they are */}
+                    <img src={w.full ?? w.image} alt={w.alt} className={w.tall ? 'block w-full' : 'block max-h-[calc(100svh-10rem)] w-auto max-w-full'} />
                 </div>
-
-                {/* Markup Toolbar - Second Row */}
-                <div className="bg-panel-fg/5 px-6 py-1.5 hidden sm:flex items-center gap-5 border-b border-panel-fg/10">
-                    <div className="flex items-center gap-3 text-panel-fg/40">
-                        <IoScanOutline className="text-base hover:text-panel-fg transition-colors cursor-pointer" />
-                        <IoSearch className="text-base hover:text-panel-fg transition-colors cursor-pointer" />
-                    </div>
-                    <div className="w-px h-4 bg-panel-fg/10"></div>
-                    <div className="flex items-center gap-4 text-panel-fg/40">
-                        <IoCreateOutline className="text-base hover:text-panel-fg transition-colors cursor-pointer" />
-                        <IoScanOutline className="text-base hover:text-panel-fg transition-colors rotate-45 cursor-pointer" />
-                        <IoGridOutline className="text-base hover:text-panel-fg transition-colors cursor-pointer" />
-                        <div className="flex items-center gap-1 bg-panel-fg/10 rounded px-1 py-0.5 cursor-pointer">
-                            <IoAppsOutline className="text-base hover:text-panel-fg transition-colors" />
-                            <IoChevronForward className="text-[8px] rotate-90 opacity-40" />
-                        </div>
-                        <IoTextOutline className="text-base hover:text-panel-fg transition-colors cursor-pointer" />
-                        <IoPersonOutline className="text-base hover:text-panel-fg transition-colors cursor-pointer" />
-                    </div>
-                    <div className="w-px h-4 bg-panel-fg/10"></div>
-                    <div className="flex items-center gap-4 text-panel-fg/40">
-                        <div className="w-4 h-4 rounded border border-panel-fg/20 bg-panel-fg/5"></div>
-                        <div className="flex items-center gap-1">
-                            <div className="w-4 h-4 rounded-full border border-panel-fg/40 bg-red-500"></div>
-                            <IoChevronForward className="text-[8px] rotate-90 opacity-40" />
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <span className="text-xs font-bold text-panel-fg/80">Aa</span>
-                            <IoChevronForward className="text-[8px] rotate-90 opacity-40" />
-                        </div>
-                    </div>
-                </div>
-                
-                {/* Image Container - Fixed height to avoid scrolling */}
-                <div className="flex-1 flex items-center justify-center p-4 md:p-10 overflow-hidden min-h-0 relative bg-transparent">
-                    <motion.img 
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        key={image}
-                        src={image} 
-                        alt="Preview" 
-                        className="object-contain shadow-2xl rounded-sm transition-all"
-                        style={{ 
-                            maxHeight: 'calc(90vh - 160px)', 
-                            maxWidth: '100%',
-                            filter: 'drop-shadow(0 0 30px rgba(0,0,0,0.5))' 
-                        }}
-                    />
-                </div>
-            </motion.div>
-        </motion.div>
-    );
-};
-
-interface CodeProject {
-    title: string;
-    type: string;
-    desc: string;
-    tech: string[];
-    link?: string;
-    github: string;
-}
-
-// The four strongest builds, shown large with real screenshots of the live sites.
-// Everything else (and the design work) stays in the Finder archive below.
-const featured: { title: string; category: string; image: string }[] = [
-    { title: "PosePulse", category: "AI / ML", image: "/portfolio/projects/posepulse.webp" },
-    { title: "SnapClass", category: "AI / ML", image: "/portfolio/projects/snapclass.webp" },
-    { title: "TradeDash", category: "Full stack", image: "/portfolio/projects/zerodha.webp" },
-    { title: "AlgoRacer", category: "Web", image: "/portfolio/projects/algoracer.webp" },
-];
-
-// Any file in the Finder: a code project or a design image
-type FinderItem = Partial<CodeProject> & { title: string; type: string; src?: string };
-
-const codeProjects = [...projectsData["Web Development"], ...projectsData["AI/ML"]] as CodeProject[];
-
-const FeaturedCard = ({ project, category, image, index }: { project: CodeProject; category: string; image: string; index: number }) => {
-    const host = project.link ? new URL(project.link).host : 'github.com';
-    const slug = project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    return (
-        <motion.article
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: (index % 2) * 0.1 }}
-            className={`group min-w-0 ${index % 2 ? 'md:mt-24' : ''}`}
-        >
-            {/* Screenshot in a browser frame; the whole frame opens the live site */}
-            <a
-                href={project.link ?? project.github}
-                data-track={`live-${slug}-screenshot`}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Open ${project.title} live site`}
-                className="block overflow-hidden rounded-2xl border border-fg/10 bg-ink shadow-paper transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1.5"
-            >
-                <div className="flex items-center gap-3 border-b border-white/10 bg-[#0b1626] px-4 py-2.5">
-                    <div aria-hidden className="flex gap-1.5">
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F56]" />
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#27C93F]" />
-                    </div>
-                    <span className="mx-auto min-w-0 max-w-[60%] truncate rounded-md bg-white/10 px-3 py-0.5 font-mono text-[11px] text-white/60">{host}</span>
-                    <span className="w-[42px]" />
-                </div>
-                <div className="relative aspect-[16/10] overflow-hidden">
-                    <img
-                        src={image}
-                        alt={`${project.title} live site`}
-                        width={1200}
-                        height={750}
-                        loading="lazy"
-                        decoding="async"
-                        className="h-full w-full object-cover object-top transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
-                    />
-                    <span className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-pink px-4 py-2 font-mono text-[11px] uppercase tracking-[0.16em] text-ink opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
-                        Visit site <span aria-hidden>↗</span>
+                <figcaption className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-1 pt-3 text-[14px] text-[#2A2A35]">
+                    <span>
+                        <b>{w.title}</b> · {w.kind}
                     </span>
-                </div>
-            </a>
-
-            <div className="mt-6 flex items-baseline justify-between gap-4">
-                <h3 className="text-2xl sm:text-[1.75rem] font-bold tracking-[-0.02em] text-fg">{project.title}</h3>
-                <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.18em] text-accent">{category}</span>
-            </div>
-            <p className="mt-2 max-w-xl text-base leading-relaxed text-fg/65">{project.desc}</p>
-            <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-                {project.tech.join(' · ')}
-            </p>
-            <div className="mt-3 flex gap-6 font-mono text-[11px] uppercase tracking-[0.18em]">
-                {project.link && (
-                    <a href={project.link} data-track={`live-${slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1.5 text-fg transition-colors hover:text-accent">
-                        Live site <span aria-hidden>↗</span>
-                    </a>
-                )}
-                <a href={project.github} data-track={`code-${slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1.5 text-fg transition-colors hover:text-accent">
-                    Code <span aria-hidden>↗</span>
-                </a>
-            </div>
-        </motion.article>
+                    {w.tall && <span className="text-[13px] text-[#2A2A35]/60">Scroll to see the whole page</span>}
+                </figcaption>
+                <button
+                    ref={closeRef}
+                    type="button"
+                    onClick={onClose}
+                    aria-label="Close"
+                    className="absolute -right-3 -top-3 grid h-11 w-11 cursor-pointer place-items-center rounded-full bg-[#FFFDF7] text-xl text-[#2A2A35] shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                    <IoClose />
+                </button>
+            </motion.figure>
+        </motion.div>,
+        document.body,
     );
 };
+
+// ---------------------------------------------------------------------------
+// The lanterns
+
+// The paper of every lantern, unlit and lit, for each kind
+const LanternPapers = () => (
+    <svg aria-hidden className="absolute h-0 w-0">
+        <defs>
+            {GROUPS.map((g) => {
+                const k = KIND[g];
+                return (
+                    <React.Fragment key={g}>
+                        <linearGradient id={`lan-${k.slug}-unlit`} x1="0" x2="1">
+                            <stop offset="0%" stopColor={k.unlit[1]} />
+                            <stop offset="50%" stopColor={k.unlit[0]} />
+                            <stop offset="100%" stopColor={k.unlit[1]} />
+                        </linearGradient>
+                        <radialGradient id={`lan-${k.slug}-lit`} cx="50%" cy="48%" r="60%">
+                            <stop offset="0%" stopColor={k.lit[0]} />
+                            <stop offset="45%" stopColor={k.lit[1]} />
+                            <stop offset="100%" stopColor={k.lit[2]} />
+                        </radialGradient>
+                    </React.Fragment>
+                );
+            })}
+        </defs>
+    </svg>
+);
+
+// Ribs across each shape: [y, half-width]
+const RIBS = {
+    round: [[20, 18], [27, 24], [34, 26.5], [41, 26.5], [48, 26.5], [55, 26.5], [62, 26.5], [69, 24], [76, 18]],
+    tall: [[20, 19], [28, 19], [36, 19], [44, 19], [52, 19], [60, 19], [68, 19], [76, 19]],
+    globe: [[31, 17], [38, 23], [45, 25.5], [52, 25.5], [59, 23], [66, 17]],
+};
+
+const Lantern = ({ group, lit }: { group: Group; lit: boolean }) => {
+    const k = KIND[group];
+    const globe = k.shape === 'globe';
+    const [top, bottom] = globe ? [18, 76] : [6, 83]; // where the caps sit
+    const paper = `url(#lan-${k.slug}-${lit ? 'lit' : 'unlit'})`;
+    return (
+        <svg aria-hidden viewBox="0 0 64 104" className={`relative transition-[filter] duration-500 ${globe ? 'h-[66px] w-[40px] sm:h-[76px] sm:w-[47px]' : 'h-[74px] w-[46px] sm:h-[88px] sm:w-[54px]'}`}>
+            <path d={`M32 0 v${top}`} stroke="#3A281B" strokeWidth="1.5" />
+            <rect x={globe ? 24 : 21} y={top} width={globe ? 16 : 22} height="7" rx="2" fill="#2B1D14" />
+            {k.shape === 'round' && <ellipse cx="32" cy="48" rx="27" ry="36" fill={paper} />}
+            {k.shape === 'tall' && <rect x="12" y="12" width="40" height="72" rx="10" fill={paper} />}
+            {globe && <circle cx="32" cy="48.5" r="26" fill={paper} />}
+            <g stroke={k.rib} strokeWidth="0.9" fill="none" opacity="0.35">
+                {RIBS[k.shape].map(([y, rx]) => (
+                    <path key={y} d={`M${32 - rx} ${y} Q32 ${y + (k.shape === 'tall' ? 1.2 : 3.2)} ${32 + rx} ${y}`} />
+                ))}
+            </g>
+            <g transform={`translate(32 48) scale(${globe ? 0.95 : 1.1})`} fill={k.rib} opacity={lit ? 0.7 : 0.55}>
+                {[0, 72, 144, 216, 288].map((r) => (
+                    <path key={r} d="M0 -1.5 C -3.6 -4 -4 -8.6 -1.4 -10.8 L 0 -9.4 L 1.4 -10.8 C 4 -8.6 3.6 -4 0 -1.5 Z" transform={`rotate(${r})`} />
+                ))}
+            </g>
+            <rect x={globe ? 24 : 21} y={bottom} width={globe ? 16 : 22} height="7" rx="2" fill="#2B1D14" />
+            <path d={`M32 ${bottom + 7} v5`} stroke={k.rib} strokeWidth="1.6" />
+            <path d={`M28.5 ${bottom + 12} h7 l-1 9 h-5 z`} fill={k.ink} />
+        </svg>
+    );
+};
+
+// The branch arches up a little: at p across it sits 30 - 48p(1 - p) from the top
+const branchY = (p: number) => 30 - 48 * p * (1 - p);
+
+// Along the branch: each group's name plaque, then its lanterns
+type Slot = { group: Group; w?: Work; cont?: boolean };
+const SLOTS: Slot[] = GROUPS.flatMap((group) => [{ group }, ...inGroup(group).map((w) => ({ group, w }))]);
+const CORDS = [44, 74, 50, 86, 58, 80];
+
+// When the lanterns no longer fit on one branch, they carry on along another
+// below, split evenly so every branch is about as full. A branch that picks up
+// partway through a group opens with that group's plaque again, and a plaque is
+// never left hanging at the end of a branch.
+const rowsOf = (perRow: number): Slot[][] => {
+    const count = Math.ceil(SLOTS.length / perRow);
+    const size = Math.ceil(SLOTS.length / count);
+    const rows: Slot[][] = [[]];
+    for (const slot of SLOTS) {
+        const row = rows[rows.length - 1];
+        if (rows.length < count && (row.length >= size || (!slot.w && row.length >= size - 1))) {
+            rows.push(slot.w ? [{ group: slot.group, cont: true }] : []);
+        }
+        rows[rows.length - 1].push(slot);
+    }
+    return rows;
+};
+
+// How many slots a branch can hold: on wide screens, one per 84px of branch;
+// narrower screens scroll the branch sideways, so they keep long branches
+const SLOT_WIDTH = 84;
+const onResize = (update: () => void) => {
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+};
+const slotsPerRow = () => (window.innerWidth >= 1280 ? Math.floor(Math.min(window.innerWidth - 80, 1360) / SLOT_WIDTH) : 14);
+const useSlotsPerRow = () => useSyncExternalStore(onResize, slotsPerRow, () => 14);
+
+const Plaque = ({ group, p, cont }: { group: Group; p: number; cont?: boolean }) => (
+    <div aria-hidden className="absolute flex -translate-x-1/2 flex-col items-center" style={{ left: `${p * 100}%`, top: branchY(p) }}>
+        <span className="flex w-12 justify-between">
+            <span className="block h-6 w-px rotate-[14deg] bg-fg/40" />
+            <span className="block h-6 w-px -rotate-[14deg] bg-fg/40" />
+        </span>
+        <span className="-mt-px rounded-[3px] bg-[#EFE2C6] px-3 pb-2 pt-1.5 text-center shadow-[0_8px_14px_-8px_rgba(0,0,0,0.6)]" style={{ borderTop: `3px solid ${KIND[group].dot}` }}>
+            <span className="block whitespace-nowrap font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#2A211B]">{group}</span>
+            <span className="block font-display text-[15px] italic leading-none text-[#2A211B]/60">{cont ? 'cont.' : inGroup(group).length}</span>
+        </span>
+    </div>
+);
+
+// ---------------------------------------------------------------------------
 
 const Projects = () => {
-    const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-    const [previewImage, setPreviewImage] = useState<string | null>(null);
-    const [activeProject, setActiveProject] = useState<CodeProject | null>(null);
-    const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+    const [sel, setSel] = useState(0);
+    const [viewing, setViewing] = useState<Work | null>(null);
+    const opener = useRef<HTMLElement | null>(null);
+    const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+    const rows = rowsOf(useSlotsPerRow());
+    const w = works[sel];
+    const k = KIND[w.group];
+    const design = w.group === 'Design';
 
-    const folderNames = ["Design", "Web Development", "AI/ML"];
-
-    // Close menu on click outside
-    React.useEffect(() => {
-        const handleClick = () => setActiveProject(null);
-        window.addEventListener('click', handleClick);
-        return () => window.removeEventListener('click', handleClick);
-    }, []);
-
-    interface SidebarItem {
-        icon: React.ReactNode;
-        label: string;
-        id?: string;
-    }
-
-    const sidebarItems: { section: string; items: SidebarItem[] }[] = [
-        { section: "", items: [
-            { icon: <IoTimeOutline />, label: "Recents", id: "home" },
-            { icon: <IoPeopleOutline />, label: "Shared", id: "about" }
-        ]},
-        { section: "Favourites", items: [
-            { icon: <IoHomeOutline />, label: "Home", id: "home" },
-            { icon: <IoPersonOutline />, label: "About", id: "about" },
-            { icon: <IoBriefcaseOutline />, label: "Experience", id: "experience" },
-            { icon: <IoExtensionPuzzleOutline />, label: "Skills", id: "skills" },
-            { icon: <IoBulbOutline />, label: "Patents", id: "patents" },
-            { icon: <IoFolderOpenOutline />, label: "Projects", id: "projects" },
-            { icon: <IoMailOutline />, label: "Contact", id: "contact" }
-        ]},
-        { section: "Locations", items: [
-            { icon: <IoCloudOutline />, label: "iCloud Drive" },
-            { icon: <IoGlobeOutline />, label: "Network" },
-            { icon: <IoTrashOutline />, label: "Bin" }
-        ]}
-    ];
-
-    const scrollToSection = (id: string) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-        }
+    const view: View = (piece, e) => {
+        opener.current = e.currentTarget;
+        setViewing(piece);
+    };
+    const close = () => {
+        setViewing(null);
+        opener.current?.focus();
+    };
+    // arrow keys move along the lanterns, as in any set of tabs
+    const onKey = (e: React.KeyboardEvent) => {
+        const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!step) return;
+        e.preventDefault();
+        const next = (sel + step + works.length) % works.length;
+        setSel(next);
+        tabs.current[next]?.focus();
     };
 
     return (
-        <section id="projects" className="w-full px-5 sm:px-10 py-28 sm:py-40">
+        <section id="projects" className="w-full px-5 pb-28 pt-20 sm:px-10 sm:pb-36 sm:pt-28">
             <div className="mx-auto max-w-[1360px]">
-                {/* Section Header */}
-                <SectionHeading eyebrow="What I've built" title={<>Things I’ve <em>built</em></>} />
+                <SectionHeading title={<>Things I’ve <em>built</em></>} />
+                <LanternPapers />
 
-                {/* Featured work */}
-                <div className="grid grid-cols-1 gap-x-10 gap-y-16 md:grid-cols-2 lg:gap-x-14">
-                    {featured.map((f, i) => {
-                        const project = codeProjects.find((p) => p.title === f.title);
-                        return project ? <FeaturedCard key={f.title} project={project} category={f.category} image={f.image} index={i} /> : null;
-                    })}
+                {/* the branches, each with its name plaques and lanterns */}
+                <div role="tablist" aria-label="Projects">
+                    {rows.map((row, r) => (
+                        <div key={r} className="-mx-5 overflow-x-auto px-5 sm:-mx-10 sm:px-10 xl:mx-0 xl:overflow-visible xl:px-0">
+                            <motion.div
+                                initial={{ opacity: 0, y: 30 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true, margin: '-60px' }}
+                                transition={{ duration: 0.8, ease }}
+                                className="relative h-[250px] sm:h-[280px]"
+                                style={{ minWidth: row.length * 68 }}
+                            >
+                                {/* (every other branch is drawn the other way round) */}
+                                <svg aria-hidden viewBox="0 0 1000 60" preserveAspectRatio="none" className={`absolute inset-x-0 top-0 h-[60px] w-full text-fg/55 ${r % 2 ? '-scale-x-100' : ''}`}>
+                                    <path d="M-10 32 Q500 -18 1010 32" stroke="currentColor" strokeWidth="3.2" fill="none" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+                                    <path d="M110 24 q30 -18 60 -16 M390 11 q24 -16 52 -12 M640 10 q30 -14 58 -6 M860 20 q24 -14 50 -8" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+                                </svg>
+                                {[0.03, 0.17, 0.3, 0.44, 0.58, 0.72, 0.85, 0.97].map((p) => (
+                                    <span key={p} aria-hidden className="absolute -translate-x-1/2 -translate-y-1/2 text-[#F2AEBC]" style={{ left: `${(r % 2 ? 1 - p : p) * 100}%`, top: branchY(p) - 4 }}>
+                                        <Sakura className="h-4 w-4" />
+                                    </span>
+                                ))}
+
+                                {row.map((slot, s) => {
+                                    const p = (s + 0.5) / row.length;
+                                    if (!slot.w) return <Plaque key={`${slot.group}-${s}`} group={slot.group} p={p} cont={slot.cont} />;
+                                    const i = works.indexOf(slot.w);
+                                    const lit = i === sel;
+                                    const kind = KIND[slot.group];
+                                    const cord = CORDS[i % CORDS.length];
+                                    return (
+                                        <button
+                                            key={slot.w.title}
+                                            ref={(el) => {
+                                                tabs.current[i] = el;
+                                            }}
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={lit}
+                                            aria-controls="project-scroll"
+                                            aria-label={`${slot.w.title}, ${slot.group}`}
+                                            tabIndex={lit ? 0 : -1}
+                                            onClick={() => setSel(i)}
+                                            onKeyDown={onKey}
+                                            className="lantern-sway group absolute flex -translate-x-1/2 cursor-pointer flex-col items-center outline-none"
+                                            style={{ left: `${p * 100}%`, top: branchY(p), animationDelay: `${-i * 0.7}s` }}
+                                        >
+                                            <span aria-hidden className="block w-px bg-fg/45" style={{ height: cord }} />
+                                            <span className="relative -mt-px transition-transform duration-300 group-hover:scale-105 group-focus-visible:scale-105">
+                                                <motion.span
+                                                    aria-hidden
+                                                    initial={false}
+                                                    animate={{ opacity: lit ? 1 : 0, scale: lit ? 1 : 0.6 }}
+                                                    className="pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                                                    style={{ background: `radial-gradient(circle, ${kind.glow}, transparent 68%)` }}
+                                                />
+                                                <Lantern group={slot.group} lit={lit} />
+                                            </span>
+                                            <span className={`mt-2 max-w-[7.5rem] text-center font-mono text-[10px] uppercase leading-tight tracking-[0.14em] transition-colors group-focus-visible:underline ${lit ? 'text-fg' : 'text-fg/55 group-hover:text-fg'}`}>
+                                                {slot.w.title}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </motion.div>
+                        </div>
+                    ))}
                 </div>
 
-                {/* The archive: everything else, Finder-style */}
-                <div className="mt-28 sm:mt-36 mb-8 flex flex-col gap-3 border-t border-fg/15 pt-8 sm:flex-row sm:items-end sm:justify-between">
-                    <h3 className="font-display text-3xl sm:text-4xl text-fg">
-                        Or dig through <em className="text-accent">the archive</em>
-                    </h3>
-                    <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-                        Open a folder · click a file for details
+                {/* the key: each kind's colour, and a way straight to it */}
+                <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1">
+                    {GROUPS.map((g) => {
+                        const here = w.group === g;
+                        return (
+                            <button
+                                key={g}
+                                type="button"
+                                onClick={() => {
+                                    const i = works.indexOf(inGroup(g)[0]);
+                                    setSel(i);
+                                    // on narrow screens the branch scrolls sideways: bring the group into view
+                                    tabs.current[i]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                                }}
+                                className={`flex min-h-11 cursor-pointer items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.2em] transition-colors ${here ? 'text-fg' : 'text-fg/55 hover:text-fg'}`}
+                            >
+                                <span className="h-2.5 w-2.5 rounded-full" style={{ background: KIND[g].dot, boxShadow: here ? `0 0 10px 2px ${KIND[g].glow}` : undefined }} />
+                                {g}
+                                <span className="text-fg/40">{inGroup(g).length}</span>
+                            </button>
+                        );
+                    })}
+                    <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted sm:ml-auto">
+                        <Sakura className="h-3 w-3 text-accent" /> Light a lantern
                     </p>
                 </div>
 
-                {/* Finder Styled Container */}
-                <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="w-full rounded-3xl overflow-hidden shadow-2xl border border-panel-fg/10 flex flex-col h-[560px] sm:h-[700px] backdrop-blur-xl"
-                    style={{ background: 'var(--finder-bg)' }}
-                >
-                    {/* Finder Header */}
-                    <div className="bg-panel-fg/5 px-4 sm:px-6 py-4 flex items-center border-b border-panel-fg/10">
-                        {/* Traffic Lights */}
-                        <div className="flex gap-2 mr-4 sm:mr-8">
-                            <div className="w-3 h-3 rounded-full bg-[#FF5F56] cursor-pointer"></div>
-                            <div className="w-3 h-3 rounded-full bg-[#FFBD2E] cursor-pointer"></div>
-                            <div className="w-3 h-3 rounded-full bg-[#27C93F] cursor-pointer"></div>
-                        </div>
-
-                        {/* Navigation Arrows */}
-                        <div className="flex gap-3 sm:gap-4 mr-4 sm:mr-8 text-panel-fg/40">
-                            <IoChevronBack className="text-xl cursor-pointer hover:text-panel-fg/80 transition-colors" onClick={() => setSelectedFolder(null)} />
-                            <IoChevronForward className="text-xl cursor-not-allowed" />
-                        </div>
-
-                        {/* Title */}
-                        <div className="text-sm font-bold text-panel-fg/80 flex-1 min-w-0 sm:flex-none sm:w-48 truncate">
-                            {selectedFolder ? `${selectedFolder}` : "Projects"}
-                        </div>
-
-                        {/* View Options & Search */}
-                        <div className="flex items-center gap-6 text-panel-fg/60 ml-auto pl-3">
-                            <div className="hidden sm:flex bg-panel-fg/10 rounded-md p-1 border border-panel-fg/10">
-                                <div className="p-1 bg-panel-fg/10 rounded cursor-pointer hover:bg-panel-fg/20 transition-colors"><IoGridOutline className="text-sm" /></div>
-                                <div className="p-1 cursor-pointer hover:bg-panel-fg/10 rounded transition-colors"><IoListOutline className="text-sm" /></div>
-                            </div>
-                            <IoSearch className="text-xl cursor-pointer hover:text-panel-fg transition-colors" />
-                        </div>
-                    </div>
-
-                    <div className="flex flex-1 overflow-hidden">
-                        {/* Sidebar */}
-                        <div className="w-64 bg-panel-fg/5 border-r border-panel-fg/10 p-4 hidden md:flex flex-col gap-6 overflow-y-auto backdrop-blur-md">
-                            {sidebarItems.map((sec, i) => (
-                                <div key={i} className="flex flex-col gap-1">
-                                    {sec.section && <h4 className="text-[10px] uppercase tracking-[0.2em] text-panel-fg/30 font-bold px-3 mb-2">{sec.section}</h4>}
-                                    {sec.items.map((item, j) => (
-                                        <div 
-                                            key={j} 
-                                            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${item.id && item.id === (selectedFolder === null ? "projects" : "") ? 'bg-finder/20 text-finder-soft' : 'text-panel-fg/60 hover:bg-panel-fg/5 hover:text-panel-fg'}`}
-                                            onClick={() => item.id ? scrollToSection(item.id) : null}
-                                        >
-                                            <span className="text-finder-soft text-lg">{item.icon}</span>
-                                            {item.label}
-                                        </div>
-                                    ))}
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Main Content Area */}
-                        <div className="flex-1 p-5 sm:p-8 md:p-12 overflow-y-auto bg-transparent relative">
-                            <AnimatePresence mode="wait">
-                                {!selectedFolder ? (
-                                    <motion.div 
-                                        key="folders"
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                        className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-12"
-                                    >
-                                        {folderNames.map((name) => (
-                                            <motion.button
-                                                type="button"
-                                                key={name}
-                                                whileHover={{ y: -5 }}
-                                                whileTap={{ scale: 0.95 }}
-                                                onClick={() => setSelectedFolder(name)}
-                                                className="flex flex-col items-center gap-3 rounded-xl cursor-pointer group"
-                                            >
-                                                <BlueFolder />
-                                                <span className="text-panel-fg/90 font-bold text-xs text-center tracking-wide group-hover:text-finder-soft transition-colors">
-                                                    {name}
-                                                </span>
-                                            </motion.button>
-                                        ))}
-                                    </motion.div>
-                                ) : (
-                                    <motion.div 
-                                        key="project-list"
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        className="w-full h-full flex flex-col"
-                                    >
-                                        {/* Back Button */}
-                                        <button 
-                                            onClick={() => setSelectedFolder(null)}
-                                            className="flex items-center gap-2 text-finder-soft hover:underline mb-8 sm:mb-12 font-bold text-sm tracking-tight cursor-pointer"
-                                        >
-                                            <IoChevronBack />
-                                            Projects
-                                        </button>
-
-                                        {selectedFolder && projectsData[selectedFolder as keyof typeof projectsData].length > 0 ? (
-                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-10">
-                                                {projectsData[selectedFolder as keyof typeof projectsData].map((item: FinderItem, idx) => (
-                                                    <div key={idx} className="relative group">
-                                                        <motion.button
-                                                            type="button"
-                                                            initial={{ opacity: 0, y: 10 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            className={`w-full flex flex-col items-center gap-3 cursor-pointer p-2 rounded-xl transition-all ${activeProject?.title === item.title ? 'bg-finder/30' : 'hover:bg-panel-fg/5'}`}
-                                                            onClick={(e) => {
-                                                                if (item.type === 'image') {
-                                                                    setPreviewImage(item.src ?? null);
-                                                                } else {
-                                                                    e.stopPropagation();
-                                                                    const menuWidth = 256;
-                                                                    const menuHeight = 320;
-                                                                    const padding = 20;
-                                                                    // Keyboard activation has no pointer position, so anchor to the file
-                                                                    const rect = e.currentTarget.getBoundingClientRect();
-                                                                    let x = e.clientX || rect.left + rect.width / 2;
-                                                                    let y = e.clientY || rect.bottom;
-
-                                                                    // Edge detection with padding
-                                                                    if (x + menuWidth + padding > window.innerWidth) {
-                                                                        x = Math.max(padding, x - menuWidth);
-                                                                    }
-                                                                    if (y + menuHeight + padding > window.innerHeight) {
-                                                                        y = Math.max(padding, y - menuHeight);
-                                                                    }
-                                                                    
-                                                                    // Safety clamp
-                                                                    x = Math.min(Math.max(padding, x), window.innerWidth - menuWidth - padding);
-                                                                    y = Math.min(Math.max(padding, y), window.innerHeight - menuHeight - padding);
-
-                                                                    setActiveProject(activeProject?.title === item.title ? null : (item as CodeProject));
-                                                                    setMenuPos({ x, y });
-                                                                }
-                                                            }}
-                                                        >
-                                                            <div className="w-24 h-28 bg-finder/10 border border-finder/20 rounded-xl flex flex-col items-center justify-center relative overflow-hidden shadow-xl group-hover:bg-finder/20 transition-all backdrop-blur-sm">
-                                                                {item.type === 'image' ? (
-                                                                    <img src={item.src} className="w-full h-full object-cover" alt={item.title} />
-                                                                ) : (
-                                                                    <>
-                                                                        <IoDocumentOutline className="text-4xl text-finder-soft" />
-                                                                        <div className="absolute bottom-0 left-0 right-0 bg-finder/40 py-1.5 text-[8px] font-black text-center uppercase tracking-[0.2em] text-panel-fg">Project</div>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                            <span className="text-panel-fg/80 font-bold text-[11px] text-center px-2 line-clamp-2 leading-tight group-hover:text-panel-fg transition-colors">
-                                                                {item.title}
-                                                            </span>
-                                                        </motion.button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="flex-1 flex flex-col items-center justify-center text-center opacity-60">
-                                                <div className="mb-10">
-                                                    <div className="grid grid-cols-3 gap-2 opacity-20">
-                                                        {[...Array(9)].map((_, i) => (
-                                                            <div key={i} className="w-3 h-3 rounded-full bg-panel-fg"></div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                                <h4 className="text-2xl font-black text-panel-fg mb-4 tracking-tight">
-                                                    {selectedFolder === "AI/ML" ? "Models training in progress..." : "Drafting pixels..."}
-                                                </h4>
-                                                <p className="text-xs text-panel-fg/50 max-w-xs leading-relaxed font-medium">
-                                                    {selectedFolder === "AI/ML" 
-                                                        ? "System warming up... Models training in the cloud. Expect high-performance intelligence soon."
-                                                        : "Creatively thinking... Pixels are being aligned. Creative vision in progress."}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    </div>
-                </motion.div>
-            </div>
-
-            {/* Menu and preview are portalled to <body> so they layer above the fixed navbar
-                (inside <main> they are trapped in its stacking context, below the navbar) */}
-            {createPortal(
-                <>
-                    {/* Project Context Menu - Global Instance */}
-                    <AnimatePresence>
-                        {activeProject && (
+                {/* the hanging scroll, unrolling for the lit lantern */}
+                <div id="project-scroll" role="tabpanel" aria-live="polite" className="relative mt-10">
+                    <AnimatePresence mode="wait" initial={false}>
+                        <motion.div key={sel} className="relative px-3 sm:px-4" exit={{ opacity: 0, transition: { duration: 0.15 } }}>
+                            <span aria-hidden className="scroll-roller absolute bottom-[-8px] left-0 top-[-8px] z-10 w-4 rounded-full sm:w-5" />
+                            <motion.span
+                                aria-hidden
+                                initial={{ left: '0%' }}
+                                animate={{ left: 'calc(100% - 20px)' }}
+                                transition={{ duration: 0.9, ease }}
+                                className="scroll-roller absolute bottom-[-8px] top-[-8px] z-10 w-4 rounded-full sm:w-5"
+                            />
                             <motion.div
-                                initial={{ opacity: 0, scale: 0.9, y: -10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                                className="fixed z-[110] w-64 rounded-xl overflow-hidden shadow-2xl border border-panel-fg/10 backdrop-blur-3xl py-1.5"
-                                style={{ 
-                                    left: menuPos.x, 
-                                    top: menuPos.y,
-                                    background: 'var(--menu-bg)'
-                                }}
-                                onClick={(e) => e.stopPropagation()}
+                                initial={{ clipPath: 'inset(0 100% 0 0)' }}
+                                animate={{ clipPath: 'inset(0 0% 0 0)' }}
+                                transition={{ duration: 0.9, ease }}
+                                className={`scroll-paper grid items-center gap-8 px-6 py-8 sm:px-10 sm:py-10 lg:gap-12 ${design ? 'lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)]' : 'lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]'}`}
+                                style={{ borderTop: `4px solid ${k.dot}` }}
                             >
-                                {/* Project Info Section */}
-                                <div className="px-3 py-2 border-b border-panel-fg/10">
-                                    <div className="text-[10px] uppercase tracking-widest text-panel-fg/40 font-black mb-1">Get Info</div>
-                                    <div className="text-panel-fg font-bold text-sm mb-0.5">{activeProject.title}</div>
-                                    {activeProject.desc && (
-                                        <div className="text-[10px] text-panel-fg/50 leading-tight mb-2">{activeProject.desc}</div>
-                                    )}
-                                    <div className="flex flex-wrap gap-1 mt-1.5">
-                                        {activeProject.tech?.map((t: string) => (
-                                            <span key={t} className="text-[8px] bg-panel-fg/10 px-1.5 py-0.5 rounded text-panel-fg/70 uppercase font-bold">{t}</span>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="py-1">
-                                    {activeProject.link && (
-                                        <button 
-                                            onClick={() => window.open(activeProject.link, '_blank')}
-                                        data-track={`live-${activeProject.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-archive`}
-                                            className="w-full px-3 py-1.5 flex items-center justify-between text-xs text-panel-fg/90 hover:bg-finder hover:text-white group transition-colors cursor-pointer"
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <IoOpenOutline className="text-sm opacity-60 group-hover:opacity-100" />
-                                                <span>Open Deployed Site</span>
-                                            </div>
-                                            <IoChevronForward className="text-[10px] opacity-30" />
-                                        </button>
-                                    )}
-                                    <button 
-                                        onClick={() => window.open(activeProject.github, '_blank')}
-                                        data-track={`code-${activeProject.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-archive`}
-                                        className="w-full px-3 py-1.5 flex items-center justify-between text-xs text-panel-fg/90 hover:bg-finder hover:text-white group transition-colors cursor-pointer"
+                                {design ? (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => view(w, e)}
+                                        aria-label={`View ${w.title} larger`}
+                                        className="mx-auto block w-full max-w-[300px] cursor-zoom-in overflow-hidden rounded-[10px] shadow-[0_20px_40px_-24px_rgba(0,0,0,0.6)] outline-none ring-1 ring-black/10 focus-visible:ring-2 focus-visible:ring-[#B8365E]"
                                     >
-                                        <div className="flex items-center gap-2">
-                                            <IoLogoGithub className="text-sm opacity-60 group-hover:opacity-100" />
-                                            <span>Quick Look GitHub</span>
-                                        </div>
-                                        <IoChevronForward className="text-[10px] opacity-30" />
+                                        <Shot w={w} className="block aspect-[3/4] w-full" />
                                     </button>
-                                </div>
-
-                                <div className="h-px bg-panel-fg/10 mx-1.5 my-1"></div>
-
-                                {/* Secondary Actions */}
-                                <div className="py-1">
-                                    <div className="px-3 py-1.5 flex items-center gap-2 text-xs text-panel-fg/40 cursor-pointer hover:bg-panel-fg/5 transition-colors">
-                                        <IoShareOutline className="text-sm" />
-                                        <span>Share Project</span>
+                                ) : (
+                                    <div className="overflow-hidden rounded-[10px] shadow-[0_20px_40px_-24px_rgba(0,0,0,0.6)] ring-1 ring-black/10">
+                                        <Shot w={w} className="block aspect-[16/10] w-full" />
                                     </div>
-                                    <div className="px-3 py-1.5 flex items-center gap-2 text-xs text-panel-fg/40 cursor-pointer hover:bg-panel-fg/5 transition-colors">
-                                        <IoDocumentOutline className="text-sm" />
-                                        <span>Compress Folder</span>
+                                )}
+                                <div className="text-[#2A211B]">
+                                    <p className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: k.ink }}>
+                                        <span className="h-2 w-2 rounded-full" style={{ background: k.ink }} />
+                                        {w.group} · {two(inGroup(w.group).indexOf(w) + 1)} of {two(inGroup(w.group).length)}
+                                    </p>
+                                    <h3 className="mt-3 text-[clamp(2.2rem,4vw,3.4rem)] font-black leading-[0.92] tracking-[-0.045em]">{w.title}</h3>
+                                    <p className="mt-4 font-display text-[1.35rem] italic leading-snug text-[#2A211B]/80">{w.desc}</p>
+                                    <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.16em] text-[#2A211B]/60">{w.kind ?? w.tech.join(' · ')}</p>
+                                    <div className="mt-6">
+                                        <Buttons w={w} onView={view} />
                                     </div>
-                                </div>
-
-                                <div className="h-px bg-panel-fg/10 mx-1.5 my-1"></div>
-
-                                {/* Tags */}
-                                <div className="px-3 py-2 flex items-center justify-between">
-                                    <div className="flex gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-panel-fg/20 cursor-pointer"></div>
-                                        <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-panel-fg/20 cursor-pointer"></div>
-                                        <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-panel-fg/20 cursor-pointer"></div>
-                                        <div className="w-3 h-3 rounded-full bg-finder border border-panel-fg/20 cursor-pointer"></div>
-                                    </div>
-                                    <span className="text-[10px] text-panel-fg/30 font-bold cursor-pointer">Tags...</span>
                                 </div>
                             </motion.div>
-                        )}
+                        </motion.div>
                     </AnimatePresence>
+                </div>
+            </div>
 
-                    {/* macOS Preview Style Modal */}
-                    <AnimatePresence>
-                        {previewImage && (
-                            <PreviewModal 
-                                isOpen={!!previewImage} 
-                                image={previewImage} 
-                                onClose={() => setPreviewImage(null)} 
-                            />
-                        )}
-                    </AnimatePresence>
-                </>,
-                document.body
-            )}
+            <AnimatePresence>{viewing && <Viewer key={viewing.title} w={viewing} onClose={close} />}</AnimatePresence>
         </section>
     );
 };

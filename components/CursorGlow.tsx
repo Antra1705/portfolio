@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import Sakura from './Sakura';
 
-// A ring that eases after the pointer and swells over anything clickable.
+// A little sakura blossom that drifts after the pointer, turning slowly,
+// and blooms larger over anything clickable.
 // The native cursor stays visible. Mouse/trackpad only; skipped on touch
 // screens and for reduced motion.
 const CursorGlow = () => {
@@ -37,8 +39,9 @@ const CursorGlow = () => {
                 ry = y;
                 started = true;
             }
-            ring.style.opacity = '1';
             const target = e.target as Element | null;
+            // Areas with their own cursor (the garden's birds) hide the ring
+            ring.style.opacity = target?.closest('[data-cursor="none"]') ? '0' : '1';
             ring.classList.toggle('is-hover', !!target?.closest('a, button, input, [role="button"]'));
             if (!frame) frame = requestAnimationFrame(step);
         };
@@ -56,7 +59,9 @@ const CursorGlow = () => {
 
     return (
         <div ref={ringRef} aria-hidden className="cursor-ring">
-            <span />
+            <span>
+                <Sakura className="cursor-sakura h-full w-full" />
+            </span>
         </div>
     );
 };

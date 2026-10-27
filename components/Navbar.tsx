@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IoSunnyOutline, IoMoonOutline } from 'react-icons/io5';
 import Sakura from './Sakura';
 
 const navLinks = [
@@ -16,24 +15,8 @@ const navLinks = [
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
-type Theme = 'light' | 'dark';
-
-const ThemeToggle = ({ theme, onToggle }: { theme: Theme; onToggle: (origin: { x: number; y: number }) => void }) => (
-    <button
-        type="button"
-        data-track={theme === 'dark' ? 'theme-light' : 'theme-dark'}
-        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-        onClick={(e) => {
-            const r = e.currentTarget.getBoundingClientRect();
-            onToggle({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
-        }}
-        className="grid h-11 w-11 place-items-center rounded-full border border-fg/25 text-fg transition-colors hover:border-accent hover:text-accent"
-    >
-        {theme === 'dark' ? <IoSunnyOutline className="text-lg" /> : <IoMoonOutline className="text-lg" />}
-    </button>
-);
-
-const Navbar = ({ theme, onToggleTheme }: { theme: Theme; onToggleTheme: (origin: { x: number; y: number }) => void }) => {
+// The theme is switched by the lantern on the hero branch, not from here
+const Navbar = () => {
     const [scrolled, setScrolled] = useState(false);
     const [active, setActive] = useState('');
     const [open, setOpen] = useState(false);
@@ -73,7 +56,7 @@ const Navbar = ({ theme, onToggleTheme }: { theme: Theme; onToggleTheme: (origin
     return (
         <header className="fixed inset-x-0 top-0 z-50">
             <div
-                className={`relative z-50 flex items-center justify-between px-5 sm:px-10 transition-all duration-500 ${scrolled && !open ? 'py-3 bg-(--background)/75 backdrop-blur-xl border-b border-fg/10' : 'py-5 border-b border-transparent'}`}
+                className={`relative z-50 flex items-center justify-between px-5 sm:px-10 transition-all duration-500 ${scrolled && !open ? 'py-3 bg-(--background)/75 backdrop-blur-xl border-b border-transparent' : 'py-5 border-b border-transparent'}`}
             >
                 <a href="#home" aria-label="Antra, back to top" className="group flex items-center gap-2 text-fg" onClick={() => setOpen(false)}>
                     <Sakura className="h-5 w-5 text-accent transition-transform duration-700 group-hover:rotate-[72deg]" />
@@ -107,7 +90,6 @@ const Navbar = ({ theme, onToggleTheme }: { theme: Theme; onToggleTheme: (origin
                 </nav>
 
                 <div className="flex items-center gap-3">
-                    <ThemeToggle theme={theme} onToggle={onToggleTheme} />
                     <a
                         href="/portfolio/Antra_Resume.pdf"
                         data-track="resume-nav"
