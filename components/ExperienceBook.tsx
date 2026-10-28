@@ -288,12 +288,22 @@ export const Book = () => {
     const [ready, setReady] = useState(false); // the cover has finished opening
     const [introDone, setIntroDone] = useState(false);
     const [mark, setMark] = useState<number | null>(readMark);
+    const [backShut, setBackShut] = useState(false); // read to the end and closed from the back
 
     const t = useMotionValue(0);
     const cover = useMotionValue(0); // 0 shut, 1 open
     const coverTurn = useTransform(cover, (v) => -180 * v);
     const coverFade = useTransform(cover, [0, 0.5, 0.75], [1, 1, 0]); // phones: the cover swings off the screen
-    const shift = useTransform(cover, [0, 0.12, 1], ['-25%', '-25%', '0%']); // wide: the shut book sits in the middle (and stays put while its cover only lifts)
+    const backCover = useMotionValue(0); // the back cover: 0 lying open, 1 closed over the last page
+    const backTurn = useTransform(backCover, (v) => -180 * v); // wide: it swings over the spine onto the left
+    const backIn = useTransform(backCover, (v) => -180 * (1 - v)); // phones: it swings in from the left, over the page
+    const backFade = useTransform(backCover, [0.25, 0.5], [0, 1]);
+    // wide: the shut book sits in the middle; it moves aside as the front cover opens (not while it only
+    // lifts), and back to the middle as the back cover closes
+    const shift = useTransform(() => {
+        const c = cover.get();
+        return `${(c < 0.12 ? -25 : -25 + ((c - 0.12) / 0.88) * 25) + 25 * backCover.get()}%`;
+    });
     const sheen = useTransform(t, (v) => 0.22 * Math.sin(Math.PI * v));
 
     const bookRef = useRef<HTMLDivElement>(null);
@@ -369,6 +379,12 @@ export const Book = () => {
             swing(0);
             return;
         }
+        // on past the last page is the back cover: the book shuts
+        if (to === views && now() === views - 1) {
+            finish();
+            closeBack();
+            return;
+        }
         if (to < 0 || to >= views || to === now()) return;
         if (turnRef.current && turnRef.current.to !== to) finish(); // lifted the other way
         if (turnRef.current || startTurn(to)) run(1);
@@ -409,6 +425,25 @@ export const Book = () => {
             else setOpen(false);
         });
     };
+    // The back cover, at the end: it swings over the last page and the book shuts, back cover up.
+    // Tapped, it opens again onto the last spread.
+    const backAnim = useRef<AnimationPlaybackControlsWithThen | null>(null);
+    const closeBack = () => {
+        backAnim.current?.stop();
+        setReady(false);
+        setBackShut(true);
+        backAnim.current = animate(backCover, 1, { duration: reduceMotion ? 0.45 : 1.5, ease: [0.6, 0.02, 0.25, 1] });
+    };
+    const openBack = () => {
+        backAnim.current?.stop();
+        backAnim.current = animate(backCover, 0, { duration: reduceMotion ? 0.45 : 1.4, ease: [0.6, 0.02, 0.25, 1] });
+        backAnim.current.then(() => {
+            if (backCover.get() !== 0) return;
+            setBackShut(false);
+            setReady(true);
+        });
+    };
+
     const holdCover = (p: Press) => {
         coverAnim.current?.stop();
         coverToken.current++;
@@ -603,6 +638,7 @@ export const Book = () => {
     const markName = mark === null ? '' : mark < 2 ? 'the contents' : `chapter ${WORD[Math.floor((mark - 2) / 2)].toLowerCase()}`;
     const here = (() => {
         if (!open) return 'The book is closed. Its cover reads Experience.';
+        if (backShut) return 'The book is closed: you read it to the end. Its back cover says thank you for reading.';
         const f = faceOf(view);
         if (f < 2) return 'Contents';
         const k = Math.floor((f - 2) / 2);
@@ -610,6 +646,7 @@ export const Book = () => {
     })();
     const ribbonX = (onLeft: boolean) => (onLeft ? 'left-[22px] md:left-[calc(50%-38px)]' : 'left-[22px] md:left-[calc(50%+22px)]');
     const hasNext = view < views - 1;
+    const atEnd = !hasNext; // the next turn closes the book
     const hasPrev = view > 0;
     const sideArrow = 'absolute top-[320px] hidden h-12 w-12 -translate-y-1/2 cursor-pointer place-items-center rounded-full border border-fg/20 text-fg/70 transition-colors hover:border-accent hover:text-accent disabled:cursor-default disabled:opacity-25 disabled:hover:border-fg/20 disabled:hover:text-fg/70 min-[1340px]:grid';
 
@@ -622,7 +659,7 @@ export const Book = () => {
                     <button type="button" onClick={() => go(now() - 1)} aria-label={hasPrev ? 'Previous page' : 'Close the book'} title={hasPrev ? undefined : 'Close the book'} className={`${sideArrow} -left-20`}>
                         <IoArrowBack />
                     </button>
-                    <button type="button" onClick={() => go(now() + 1)} disabled={!hasNext} aria-label="Next page" className={`${sideArrow} -right-20`}>
+                    <button type="button" onClick={() => go(now() + 1)} aria-label={atEnd ? 'Close the book' : 'Next page'} title={atEnd ? 'Close the book' : undefined} className={`${sideArrow} -right-20`}>
                         <IoArrowForward />
                     </button>
                 </>
@@ -649,7 +686,9 @@ export const Book = () => {
                     className="relative h-[760px] [perspective:2600px] md:h-[640px]"
                 >
                     {/* the back board, under the block of pages */}
-                    <div aria-hidden className="book-cloth absolute inset-0 rounded-l-sm rounded-r-lg shadow-[0_30px_50px_-25px_rgba(0,0,0,0.6)] md:left-1/2 md:rounded-l-none" />
+                    {!(wide && backShut) && (
+                        <div aria-hidden className="book-cloth absolute inset-0 rounded-l-sm rounded-r-lg shadow-[0_30px_50px_-25px_rgba(0,0,0,0.6)] md:left-1/2 md:rounded-l-none" />
+                    )}
 
                     {/* the pages lying open: tap or drag one to turn it */}
                     <div inert={!ready}>
@@ -660,10 +699,10 @@ export const Book = () => {
                                 <Corner side="left" label="Previous page" faded={!!turn} onClick={() => go(now() - 1)} />
                             </div>
                         )}
-                        <div {...pageEvents('right')} className={`${RIGHT} book-stack-right z-10 touch-pan-y select-none ${hasNext || !wide ? 'cursor-pointer' : ''}`}>
+                        <div {...pageEvents('right')} className={`${RIGHT} book-stack-right z-10 cursor-pointer touch-pan-y select-none ${wide && backShut ? 'invisible' : ''}`}>
                             <Page face={right} side="right" contents={right === 1 ? contents : undefined} />
                             <motion.div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black to-transparent to-40%" style={{ opacity: sheen }} />
-                            {hasNext && <Corner side="right" label="Next page" faded={!!turn} onClick={() => go(now() + 1)} />}
+                            <Corner side="right" label={atEnd ? 'Close the book' : 'Next page'} faded={!!turn} onClick={() => go(now() + 1)} />
                             {!wide && <Corner side="left" label={hasPrev ? 'Previous page' : 'Close the book'} faded={!!turn} onClick={() => go(now() - 1)} />}
                         </div>
                     </div>
@@ -740,6 +779,44 @@ export const Book = () => {
                         </motion.div>
                     </motion.div>
 
+                    {/* the back cover, closing at the end. Wide: the board and the last page on it swing over
+                        the spine together, landing back cover up. Phones: it swings in over the page. */}
+                    {backShut && (
+                        <motion.div
+                            className="absolute inset-0 z-[35] cursor-pointer select-none md:left-1/2"
+                            style={{ transformStyle: 'preserve-3d', originX: 0, rotateY: wide ? backTurn : backIn }}
+                            onClick={openBack}
+                        >
+                            {wide && (
+                                <div aria-hidden className="book-cloth absolute inset-0 rounded-r-lg [backface-visibility:hidden]">
+                                    <div className="absolute bottom-5 left-0 right-3.5 top-3.5">
+                                        <Page face={right} side="right" />
+                                    </div>
+                                </div>
+                            )}
+                            <motion.button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    openBack();
+                                }}
+                                aria-label="Open the book again, at the last page"
+                                style={wide ? { rotateY: 180 } : { opacity: backFade }}
+                                className="book-cloth absolute inset-0 cursor-pointer overflow-hidden rounded-l-lg rounded-r-sm outline-none [backface-visibility:hidden] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-transparent max-md:rounded-l-sm max-md:rounded-r-lg"
+                            >
+                                <span aria-hidden className="absolute inset-y-0 right-0 w-7 bg-gradient-to-l from-black/25 to-transparent max-md:left-0 max-md:right-auto max-md:bg-gradient-to-r" />
+                                <span aria-hidden className="book-foil absolute inset-x-10 inset-y-8 border border-current opacity-40" />
+                                <span className="book-foil absolute inset-0 flex flex-col items-center justify-center gap-4 px-14 text-center">
+                                    <Sakura className="h-7 w-7 opacity-80" />
+                                    <span className="font-display text-[clamp(2.8rem,5vw,4rem)] italic leading-none">Fin.</span>
+                                    <span aria-hidden className="h-px w-14 bg-current opacity-50" />
+                                    <span className="font-book text-lg italic opacity-85">Thank you for reading</span>
+                                </span>
+                                <span aria-hidden className="book-foil absolute inset-x-0 bottom-16 text-center font-book text-sm uppercase tracking-[0.45em] opacity-70">Antra · 2026</span>
+                            </motion.button>
+                        </motion.div>
+                    )}
+
                     {/* the ribbon: laid in this page, or sticking out of the book where it was left */}
                     {ready && !turn && (
                         <>
@@ -787,14 +864,15 @@ export const Book = () => {
 
             {/* shut, it asks to be opened */}
             <AnimatePresence>
-                {!open && (
+                {(!open || backShut) && (
                     <motion.p
+                        key={backShut ? 'back' : 'front'}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1, transition: { delay: 0.8 } }}
                         exit={{ opacity: 0, transition: { duration: 0.2 } }}
                         className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-muted"
                     >
-                        <Sakura className="h-3 w-3 text-accent" /> {wide ? 'Click' : 'Tap'} the cover to open
+                        <Sakura className="h-3 w-3 text-accent" /> {wide ? 'Click' : 'Tap'} the cover to {backShut ? 'open it again' : 'open'}
                     </motion.p>
                 )}
             </AnimatePresence>
