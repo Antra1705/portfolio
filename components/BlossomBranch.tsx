@@ -7,6 +7,7 @@ import { rng, buildBark, Blossoms, type Segment, type Bloom } from './ContactTre
 import { useGardenColors } from '../lib/gardenColors';
 import { Html } from '@react-three/drei';
 import { setBlossomSource } from '../lib/blossomSource';
+import { AdaptiveResolution } from './Petals3D';
 import type { GardenColors } from './ContributionGarden';
 import HangingTag from './HangingTag';
 import { ThemeLantern } from './HeroLantern';
@@ -286,6 +287,7 @@ const BlossomBranch = ({ tagLayer, themeSwitch }: { tagLayer?: React.RefObject<H
                 gl={{ antialias: true, alpha: true }}
                 style={{ pointerEvents: 'none' }}
             >
+                {animate && onScreen && <AdaptiveResolution />}
                 <FitCamera box={branch.box} />
                 {/* same lights as the background petals, so flowers and petals match */}
                 <hemisphereLight args={['#FFFFFF', '#F7C6D4', 1.25]} />

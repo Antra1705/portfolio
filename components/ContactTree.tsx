@@ -6,7 +6,7 @@ import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { GardenColors } from './ContributionGarden';
-import { makePetalGeometry } from './Petals3D';
+import { AdaptiveResolution, makePetalGeometry } from './Petals3D';
 import { useGardenColors } from '../lib/gardenColors';
 import PaperLantern from './HeroLantern';
 
@@ -92,6 +92,9 @@ const growTree = () => {
 
 // All branch segments merged into one mesh: tapered cylinders with a sphere
 // at each joint so the bends read as one continuous limb
+// Unindexed copies to merge (some shapes, like icosahedrons, already are)
+const flat = (g: THREE.BufferGeometry) => (g.index ? g.toNonIndexed() : g);
+
 export const buildBark = (segments: Segment[]) => {
     const parts: THREE.BufferGeometry[] = [];
     for (const { a, b, r0, r1 } of segments) {
@@ -100,11 +103,11 @@ export const buildBark = (segments: Segment[]) => {
         const g = new THREE.CylinderGeometry(r1, r0, len, 8, 1, false);
         g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, dir.normalize()));
         g.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
-        parts.push(g.toNonIndexed());
+        parts.push(flat(g));
         if (r0 > 0.03) {
             const joint = new THREE.IcosahedronGeometry(r0 * 0.98, 1);
             joint.translate(a.x, a.y, a.z);
-            parts.push(joint.toNonIndexed());
+            parts.push(flat(joint));
         }
     }
     parts.forEach((g) => g.deleteAttribute('uv'));
@@ -122,7 +125,7 @@ const buildFlowerGeometry = () => {
         const g = petal.clone();
         g.rotateX(-0.5); // tilt up into a cup
         g.rotateZ((i / 5) * Math.PI * 2);
-        parts.push(g.toNonIndexed());
+        parts.push(flat(g));
     }
     const centre = new THREE.IcosahedronGeometry(0.13, 0);
     const pink = new THREE.Color('#D9537B');
@@ -230,7 +233,15 @@ interface FallingPetal {
     spin: THREE.Vector3;
     landedAt: number; // clock time it settled, or -1 while falling
     rest: number; // seconds it lies on the grass before drifting up again
+    bornAt: number; // clock time it left its flower, to grow in rather than pop
 }
+
+const ease = (k: number) => k * k * (3 - 2 * k);
+// scratch for blending a landing petal from its tumble to lying flat
+const tumble = new THREE.Euler();
+const qTumble = new THREE.Quaternion();
+const qFlat = new THREE.Quaternion();
+const flatEuler = new THREE.Euler();
 
 const PETALS = 120;
 const RESTING = 220; // petals that always lie on the grass
@@ -249,12 +260,13 @@ const Petals = ({ flowers, colors, animate, burst }: { flowers: Bloom[]; colors:
         p.landedAt = -1;
         p.rest = 2 + Math.random() * 4;
         p.swayPhase = Math.random() * 6.28 + t;
+        p.bornAt = t;
     };
 
     const petals = useMemo<FallingPetal[]>(() => {
         const random = rng(42);
         return Array.from({ length: PETALS }, () => ({
-            pos: new THREE.Vector3(), vy: 0, swayPhase: 0, landedAt: -1, rest: 0,
+            pos: new THREE.Vector3(), vy: 0, swayPhase: 0, landedAt: -1, rest: 0, bornAt: -10,
             rot: new THREE.Euler(random() * 6, random() * 6, random() * 6),
             spin: new THREE.Vector3(random() * 3 - 1.5, random() * 2 - 1, random() * 2 - 1),
         }));
@@ -322,9 +334,20 @@ const Petals = ({ flowers, colors, animate, burst }: { flowers: Bloom[]; colors:
                 }
             }
             o.position.copy(p.pos);
-            if (p.landedAt >= 0 || !animate) o.rotation.set(-Math.PI / 2, 0, p.rot.z);
-            else o.rotation.set(p.rot.x + p.spin.x * t, p.rot.y + p.spin.y * t, p.rot.z + p.spin.z * t);
-            o.scale.setScalar(0.055);
+            if (!animate) o.rotation.set(-Math.PI / 2, 0, p.rot.z);
+            else if (p.landedAt < 0) o.rotation.set(p.rot.x + p.spin.x * t, p.rot.y + p.spin.y * t, p.rot.z + p.spin.z * t);
+            else {
+                // settle: ease from the tumble it landed in to lying flat, rather than snapping
+                const k = ease(Math.min(1, (t - p.landedAt) / 0.4));
+                tumble.set(p.rot.x + p.spin.x * p.landedAt, p.rot.y + p.spin.y * p.landedAt, p.rot.z + p.spin.z * p.landedAt);
+                qTumble.setFromEuler(tumble);
+                qFlat.setFromEuler(flatEuler.set(-Math.PI / 2, 0, p.rot.z));
+                o.quaternion.copy(qTumble).slerp(qFlat, k);
+            }
+            // grow in from the flower, and fade into the grass before drifting back up
+            const born = animate ? ease(Math.min(1, (t - p.bornAt) / 0.6)) : 1;
+            const leaving = animate && p.landedAt >= 0 ? ease(Math.min(1, Math.max(0, p.rest - (t - p.landedAt)) / 0.6)) : 1;
+            o.scale.setScalar(0.055 * born * leaving);
             o.updateMatrix();
             m.setMatrixAt(i, o.matrix);
         });
@@ -463,6 +486,7 @@ const Tree = ({ tree, colors, animate, onHoverChange }: {
 }) => {
     const group = useRef<THREE.Group>(null);
     const shake = useRef(0);
+    const rattleLevel = useRef(0); // shake, eased in so a hover never jolts the tree
     const burst = useRef(0);
     const { bark, flowers, leaves, lantern } = tree;
     const night = useNight();
@@ -471,9 +495,11 @@ const Tree = ({ tree, colors, animate, onHoverChange }: {
         const g = group.current;
         if (!g) return;
         const t = clock.elapsedTime;
-        shake.current = Math.max(0, shake.current - delta * 1.4);
+        const dt = Math.min(delta, 1 / 30);
+        shake.current = Math.max(0, shake.current - dt * 1.4);
+        rattleLevel.current = THREE.MathUtils.damp(rattleLevel.current, shake.current, 14, dt);
         const breeze = animate ? Math.sin(t * 0.7) * 0.01 + Math.sin(t * 1.9) * 0.004 : 0;
-        const rattle = animate ? Math.sin(t * 22) * 0.03 * shake.current : 0;
+        const rattle = animate ? Math.sin(t * 22) * 0.03 * rattleLevel.current : 0;
         g.rotation.z = breeze + rattle;
         g.rotation.x = rattle * 0.5;
     });
@@ -594,6 +620,7 @@ const ContactTree = ({ region = [0.03, 0.97] }: { region?: [number, number] }) =
                 gl={{ antialias: true, alpha: true }}
                 style={{ touchAction: 'pan-y' }}
             >
+                <AdaptiveResolution />
                 <FitCamera points={tree.points} region={region} />
                 <hemisphereLight args={['#FFF6F9', colors.ground, 1.15]} />
                 <directionalLight

@@ -47,9 +47,12 @@ const Bird = ({ palette, flapSpeed, phase = 0, drink }: { palette: BirdPalette; 
     const left = useRef<THREE.Group>(null);
     const right = useRef<THREE.Group>(null);
     const angle = useRef(phase);
+    const flapping = useRef(flapSpeed.current ? 1 : 0); // eases between flapping and wings held open
     useFrame(({ clock }, delta) => {
-        angle.current += delta * flapSpeed.current;
-        const a = flapSpeed.current ? Math.sin(angle.current) * 0.8 : 0.35;
+        const dt = Math.min(delta, 1 / 30);
+        angle.current += dt * flapSpeed.current;
+        flapping.current = THREE.MathUtils.damp(flapping.current, flapSpeed.current ? 1 : 0, 10, dt);
+        const a = THREE.MathUtils.lerp(0.35, Math.sin(angle.current) * 0.8, flapping.current);
         const d = drink?.current ?? 0;
         if (left.current) {
             left.current.rotation.x = THREE.MathUtils.lerp(-a, 0.35, d);
@@ -145,9 +148,10 @@ export const CursorBird = ({ ponds, height = 1.25 }: { ponds: PondInfo[]; height
     const step = useMemo(() => new THREE.Vector3(), []);
     useNoRaycast(group);
 
-    useFrame((state, delta) => {
+    useFrame((state, frameDelta) => {
         const g = group.current;
         if (!g) return;
+        const delta = Math.min(frameDelta, 1 / 30); // no lurch after a stalled frame
         ray.setFromCamera(state.pointer, state.camera);
 
         // Is the pointer over a pond?
@@ -188,13 +192,15 @@ export const CursorBird = ({ ponds, height = 1.25 }: { ponds: PondInfo[]; height
             }
             const before = yaw.current;
             yaw.current = smoothAngle(yaw.current, targetYaw, 1 - Math.exp(-delta * 8));
-            const turn = flying ? THREE.MathUtils.clamp((yaw.current - before) * 8, -0.6, 0.6) : 0;
-            bank.current += (turn - bank.current) * 0.15;
+            // bank into turns by turning rate (per second, so it's the same at any refresh rate)
+            const turn = flying ? THREE.MathUtils.clamp(((yaw.current - before) / delta) * 0.13, -0.6, 0.6) : 0;
+            bank.current = THREE.MathUtils.damp(bank.current, turn, 9, delta);
 
             // Landed on the rim: fold up and drink; otherwise keep flying
             const landed = !!pond && distance < 0.06;
             drink.current += ((landed ? 1 : 0) - drink.current) * (1 - Math.exp(-delta * 6));
-            flap.current = landed ? 0 : 9 + Math.min(14, speed * 4);
+            const flapGoal = 9 + Math.min(14, speed * 4);
+            flap.current = landed ? 0 : THREE.MathUtils.damp(flap.current || flapGoal, flapGoal, 5, delta);
         }
 
         scale.current += ((inside.current && placed.current ? BIRD_SCALE : 0) - scale.current) * (1 - Math.exp(-delta * 10));
@@ -329,18 +335,22 @@ const Wanderer = ({ path, ponds, speed, offset, gait, scale, animate, children }
     const outer = useRef<THREE.Group>(null);
     const inner = useRef<THREE.Group>(null);
     useNoRaycast(outer);
-    useFrame(({ clock }) => {
+    useFrame(({ clock }, delta) => {
         const t = (animate ? clock.elapsedTime * speed : 0) + offset;
         const p = keepDry(path(t), ponds);
         const q = keepDry(path(t + 0.01), ponds);
         outer.current?.position.set(p.x, 0, p.z);
-        if (outer.current) outer.current.rotation.y = Math.atan2(-(q.z - p.z), q.x - p.x);
+        // turn towards the heading, so skirting a pond doesn't snap it round
+        if (outer.current) {
+            const heading = Math.atan2(-(q.z - p.z), q.x - p.x);
+            outer.current.rotation.y = animate ? smoothAngle(outer.current.rotation.y, heading, 1 - Math.exp(-Math.min(delta, 1 / 30) * 10)) : heading;
+        }
         if (!inner.current || !animate) return;
         const e = clock.elapsedTime;
         if (gait === 'hop') {
             const h = Math.max(0, Math.sin(e * 7 + offset));
             inner.current.position.y = h * 0.11;
-            inner.current.rotation.z = (h > 0 ? Math.cos(e * 7 + offset) : 0) * 0.25;
+            inner.current.rotation.z = Math.cos(e * 7 + offset) * h * 0.25; // tips with the hop, level on landing
         } else {
             inner.current.position.y = Math.abs(Math.sin(e * 16 + offset)) * 0.035;
         }
@@ -388,7 +398,7 @@ const Frog = ({ pads, animate }: { pads: LilyPad[]; animate: boolean }) => {
         const plain = pads.filter((p) => !p.flower);
         return plain.length >= 2 ? plain : pads;
     }, [pads]);
-    useFrame(({ clock }) => {
+    useFrame(({ clock }, delta) => {
         const g = group.current;
         if (!g || !stops.length) return;
         const period = 4.6; // seconds per stop: sit, then hop
@@ -399,12 +409,14 @@ const Frog = ({ pads, animate }: { pads: LilyPad[]; animate: boolean }) => {
         const to = stops[(i + 1) % stops.length];
         const local = t % period;
         const k = stops.length > 1 ? Math.max(0, (local - (period - hop)) / hop) : 0;
+        const glide = k * k * (3 - 2 * k); // push off and land softly
         g.position.set(
-            THREE.MathUtils.lerp(from.x, to.x, k),
+            THREE.MathUtils.lerp(from.x, to.x, glide),
             0.02 + Math.sin(k * Math.PI) * 0.09,
-            THREE.MathUtils.lerp(from.z, to.z, k),
+            THREE.MathUtils.lerp(from.z, to.z, glide),
         );
-        if (stops.length > 1) g.rotation.y = Math.atan2(-(to.z - from.z), to.x - from.x);
+        // turn to face the next pad while sitting, rather than snapping round
+        if (stops.length > 1) g.rotation.y = smoothAngle(g.rotation.y, Math.atan2(-(to.z - from.z), to.x - from.x), 1 - Math.exp(-Math.min(delta, 1 / 30) * 5));
     });
     return (
         <group ref={group} scale={1.5}>

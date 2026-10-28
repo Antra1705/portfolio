@@ -368,6 +368,9 @@ body {
   box-shadow: 0 16px 18px -10px rgba(2, 29, 56, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
+/* Holding the dusting cloth: it stands in for the pointer */
+.cloth-held, .cloth-held * { cursor: none !important; }
+
 /* The fairy lights above the spare shelf: each bulb glows and twinkles on its own beat */
 .fairy-bulb {
   box-shadow: 0 0 6px 1px currentColor, 0 0 14px 2px color-mix(in srgb, currentColor 45%, transparent);

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Sakura from './Sakura';
+import { ShelfDust, ShelfPetals } from './ShelfDust';
 import { groups, type Skill } from './skillsData';
 
 // The toolkit as books on floating wall shelves: one shelf per category, one
@@ -367,48 +368,52 @@ const FairyLights = () => (
 // ---------------------------------------------------------------------------
 
 export const Wall = () => (
-    <div className="grid gap-x-12 gap-y-12 md:grid-cols-2 xl:grid-cols-3">
-        {groups.map((g, gi) => (
-            <motion.div key={g.name} {...reveal(gi * 0.05)} className="flex flex-col justify-end">
-                <div className="flex min-h-[148px] items-end px-3 sm:min-h-[184px]">
-                    <ul aria-label={g.name} className="flex items-end gap-[2px] sm:gap-[3px]">
-                        {g.items.map((s, i) => (
-                            <li key={s.name}>
-                                <Book skill={s} tint={TINTS[gi]} lean={i === g.items.length - 1 && g.items.length > 2} />
-                            </li>
-                        ))}
-                    </ul>
-                    <Bookend />
+    <ShelfDust shelves={groups.length + 1}>
+        <div className="grid gap-x-12 gap-y-12 md:grid-cols-2 xl:grid-cols-3">
+            {groups.map((g, gi) => (
+                <motion.div key={g.name} {...reveal(gi * 0.05)} className="flex flex-col justify-end">
+                    <div className="dust-row relative flex min-h-[148px] items-end px-3 sm:min-h-[184px]">
+                        <ShelfPetals shelf={gi} />
+                        <ul aria-label={g.name} className="flex items-end gap-[2px] sm:gap-[3px]">
+                            {g.items.map((s, i) => (
+                                <li key={s.name}>
+                                    <Book skill={s} tint={TINTS[gi]} lean={i === g.items.length - 1 && g.items.length > 2} />
+                                </li>
+                            ))}
+                        </ul>
+                        <Bookend />
+                    </div>
+                    <div className="float-plank h-3 rounded-[2px]" />
+                    <p className="mt-4 flex items-baseline gap-3 px-1">
+                        <span className="font-display text-2xl italic leading-none text-fg">{g.name}</span>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">{g.items.length} books</span>
+                    </p>
+                </motion.div>
+            ))}
+            {/* the spare shelf: the things that live on a desk */}
+            <motion.div {...reveal(0.4)} className="relative flex flex-col justify-end pt-[88px] xl:col-span-2">
+                <FairyLights />
+                {/* packed end to end; narrower screens keep the ones that fit */}
+                <div className="dust-row relative flex min-h-[184px] items-end justify-between gap-1 px-1 sm:px-3">
+                    <ShelfPetals shelf={groups.length} />
+                    <span className="hidden shrink-0 xl:block"><Lamp /></span>
+                    <span className="hidden shrink-0 xl:block"><FramedPrint /></span>
+                    <Plant />
+                    <span className="hidden shrink-0 lg:block"><PetalJar /></span>
+                    <span className="hidden shrink-0 xl:block"><Novels /></span>
+                    <DuckOnBooks />
+                    <span className="hidden shrink-0 lg:block"><LuckyCat /></span>
+                    <AlarmClock />
+                    <span className="hidden shrink-0 min-[1400px]:block"><Crane /></span>
+                    <span className="hidden shrink-0 min-[1400px]:block"><Succulent /></span>
+                    <Mug />
                 </div>
                 <div className="float-plank h-3 rounded-[2px]" />
                 <p className="mt-4 flex items-baseline gap-3 px-1">
-                    <span className="font-display text-2xl italic leading-none text-fg">{g.name}</span>
-                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">{g.items.length} books</span>
+                    <span className="font-display text-2xl italic leading-none text-fg">Off the clock</span>
+                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">debugging duck included</span>
                 </p>
             </motion.div>
-        ))}
-        {/* the spare shelf: the things that live on a desk */}
-        <motion.div {...reveal(0.4)} className="relative flex flex-col justify-end pt-[88px] xl:col-span-2">
-            <FairyLights />
-            {/* packed end to end; narrower screens keep the ones that fit */}
-            <div className="flex min-h-[184px] items-end justify-between gap-1 px-1 sm:px-3">
-                <span className="hidden shrink-0 xl:block"><Lamp /></span>
-                <span className="hidden shrink-0 xl:block"><FramedPrint /></span>
-                <Plant />
-                <span className="hidden shrink-0 lg:block"><PetalJar /></span>
-                <span className="hidden shrink-0 xl:block"><Novels /></span>
-                <DuckOnBooks />
-                <span className="hidden shrink-0 lg:block"><LuckyCat /></span>
-                <AlarmClock />
-                <span className="hidden shrink-0 min-[1400px]:block"><Crane /></span>
-                <span className="hidden shrink-0 min-[1400px]:block"><Succulent /></span>
-                <Mug />
-            </div>
-            <div className="float-plank h-3 rounded-[2px]" />
-            <p className="mt-4 flex items-baseline gap-3 px-1">
-                <span className="font-display text-2xl italic leading-none text-fg">Off the clock</span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">debugging duck included</span>
-            </p>
-        </motion.div>
-    </div>
+        </div>
+    </ShelfDust>
 );

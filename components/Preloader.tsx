@@ -7,6 +7,7 @@ import { animate, motion, useMotionTemplate, useMotionValue, useTransform, type 
 // hand reaches in, takes the bead on the lantern's pull cord and tugs it; the
 // lantern flickers on, and the page opens out from it: the dark draws back in a
 // widening circle with a band of the lantern's light along its edge. The tug waits for the fonts and the hero's 3D branch.
+// The hero mounts first, hidden under the dark, so its 3D sets up before anything moves.
 // It plays on every load; there's a "Skip intro" button, and with reduced
 // motion the lantern simply lights.
 
@@ -20,7 +21,19 @@ const PULL = 46; // how far the tug draws the cord down
 const OPEN = 28;
 const PINCH = 0;
 
+const STAGE_WAIT = 1800; // ms: how long the dark waits for the branch's code before mounting the hero anyway
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const frames = (n: number) => new Promise<void>((r) => {
+    const tick = () => (--n <= 0 ? r() : requestAnimationFrame(tick));
+    requestAnimationFrame(tick);
+});
+
+// The hand's way in: one sweep along a curve from off the lower right, easing
+// onto the bead, rather than two moves with a stop between
+const START = [660, 980];
+const VIA = [300, 560]; // the curve's control point: it swings up from below the bead
+const along = (t: number, a: number, b: number, c: number) => (1 - t) * (1 - t) * a + 2 * (1 - t) * t * b + t * t * c;
 
 // The lantern's paper, ribs and caps, drawn in the hero lantern's own coordinates (64 × 104)
 type Paper = { body: string; rib: string; mark: string; cap: string; tassel: string };
@@ -96,7 +109,7 @@ const DIM_PAPER: Paper = { body: '#2B1C22', rib: '#5A3A44', mark: '#4A2A36', cap
 const LIT_NIGHT: Paper = { body: 'url(#intro-lit)', rib: '#3E7E99', mark: '#E58FA7', cap: '#2B1D14', tassel: '#6FA9C2' };
 const LIT_DAY: Paper = { body: 'url(#intro-lit)', rib: '#9E4A60', mark: '#C2577A', cap: '#2B1D14', tassel: '#E0566F' };
 
-export const Preloader = ({ onReveal, onDone }: { onReveal: () => void; onDone: () => void }) => {
+export const Preloader = ({ onStage, onReveal, onDone }: { onStage: () => void; onReveal: () => void; onDone: () => void }) => {
     // the lantern's light: powder blue by night, warm pink by day, as on the hero's
     const [night] = useState(() => document.documentElement.dataset.theme !== 'light');
     const [reduceMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -104,8 +117,8 @@ export const Preloader = ({ onReveal, onDone }: { onReveal: () => void; onDone: 
     const tint = night ? '190, 230, 245' : '255, 208, 220'; // the lantern's light, as r, g, b
 
     const scene = useMotionValue(0); // the lantern, just visible in the dark
-    const hx = useMotionValue(660); // the hand's pinch point, in scene units (starts off the screen)
-    const hy = useMotionValue(980);
+    const hx = useMotionValue(START[0]); // the hand's pinch point, in scene units (starts off the screen)
+    const hy = useMotionValue(START[1]);
     const grip = useMotionValue(0); // how far the hand has drawn down with the cord
     const thumbAngle = useMotionValue(OPEN);
     const pull = useMotionValue(0); // how far the cord is drawn down
@@ -134,9 +147,9 @@ export const Preloader = ({ onReveal, onDone }: { onReveal: () => void; onDone: 
 
     const body = useRef<SVGEllipseElement>(null);
     const run = useRef(0); // bumped to abandon a running sequence
-    const latest = useRef({ onReveal, onDone });
+    const latest = useRef({ onStage, onReveal, onDone });
     useEffect(() => {
-        latest.current = { onReveal, onDone };
+        latest.current = { onStage, onReveal, onDone };
     });
 
     // nothing scrolls underneath while it's up
@@ -158,7 +171,7 @@ export const Preloader = ({ onReveal, onDone }: { onReveal: () => void; onDone: 
         cy.set(y);
         // far enough to clear the farthest corner, soft edge and all
         const far = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y)) + FEATHER;
-        const duration = quick ? 0.8 : 1.5;
+        const duration = quick ? 0.8 : 1.6;
         reach.set(-FEATHER);
         latest.current.onReveal(); // the hero plays its entrance as it's uncovered
         animate(opening, 1, { duration, ease: 'linear' });
@@ -175,12 +188,20 @@ export const Preloader = ({ onReveal, onDone }: { onReveal: () => void; onDone: 
         let mounted = true;
         const live = () => mounted && run.current === id; // (a skip takes over by bumping run)
         const ready = Promise.race([Promise.all([document.fonts?.ready, import('./BlossomBranch').catch(() => null)]), sleep(MAX_WAIT)]);
+        // Mount the hero under the dark once the branch's code is in, and give its
+        // 3D a few frames to set up, so nothing stalls once things start moving
+        const staged = Promise.race([ready, sleep(STAGE_WAIT)]).then(async () => {
+            if (!live()) return;
+            latest.current.onStage();
+            await frames(4);
+            await sleep(120);
+        });
 
         (async () => {
             if (reduceMotion) {
                 scene.set(1);
                 lit.set(1);
-                await Promise.all([ready, sleep(500)]);
+                await Promise.all([ready, staged, sleep(500)]);
                 if (!live()) return;
                 latest.current.onReveal();
                 await animate(fade, 0, { duration: 0.4 });
@@ -188,33 +209,44 @@ export const Preloader = ({ onReveal, onDone }: { onReveal: () => void; onDone: 
                 return;
             }
 
-            await animate(scene, 1, { duration: 0.9, delay: 0.3 });
+            await Promise.all([staged, sleep(300)]);
+            if (!live()) return;
+            await animate(scene, 1, { duration: 0.9, ease: [0.4, 0, 0.2, 1] });
             if (!live()) return;
             {
-                // the hand reaches in from the lower right, then takes the bead
-                await Promise.all([
-                    animate(hx, 236, { duration: 1.15, ease: [0.2, 0.7, 0.3, 1] }),
-                    animate(hy, 430, { duration: 1.15, ease: [0.2, 0.7, 0.3, 1] }),
-                ]);
+                // the hand sweeps in from the lower right onto the bead, the thumb
+                // closing as it arrives
+                const REACH = 1.55;
+                animate(thumbAngle, PINCH, { duration: 0.32, delay: REACH - 0.2, ease: [0.4, 0, 0.2, 1] });
+                await animate(0, 1, {
+                    duration: REACH,
+                    ease: [0.3, 0.55, 0.25, 1],
+                    onUpdate: (t) => {
+                        hx.set(along(t, START[0], VIA[0], BEAD_X));
+                        hy.set(along(t, START[1], VIA[1], BEAD_Y));
+                    },
+                });
                 if (!live()) return;
-                await Promise.all([animate(hx, BEAD_X, { duration: 0.4, ease: 'easeInOut' }), animate(hy, BEAD_Y, { duration: 0.4, ease: 'easeInOut' })]);
-                if (!live()) return;
-                await animate(thumbAngle, PINCH, { duration: 0.18 });
+                await sleep(140); // a beat to take hold
             }
             await ready;
             if (!live()) return;
 
-            // the tug
-            await Promise.all([animate(pull, PULL, { duration: 0.26, ease: 'easeIn' }), animate(grip, PULL, { duration: 0.26, ease: 'easeIn' })]);
+            // the tug: a short draw down that eases in, as a wrist would
+            await Promise.all([
+                animate(pull, PULL, { duration: 0.3, ease: [0.5, 0, 0.75, 0.4] }),
+                animate(grip, PULL, { duration: 0.3, ease: [0.5, 0, 0.75, 0.4] }),
+            ]);
             if (!live()) return;
 
             // click: the lantern flickers on, the hand lets go and draws back
             animate(lit, [0, 1, 0.2, 1, 0.55, 1], { duration: 0.6, times: [0, 0.1, 0.22, 0.42, 0.58, 1] });
             {
-                animate(pull, 0, { type: 'spring', stiffness: 320, damping: 11 });
-                animate(thumbAngle, OPEN, { duration: 0.15 });
-                animate(hx, 700, { duration: 0.9, delay: 0.15, ease: [0.5, 0, 0.75, 0] });
-                animate(hy, 1000, { duration: 0.9, delay: 0.15, ease: [0.5, 0, 0.75, 0] });
+                animate(pull, 0, { type: 'spring', stiffness: 260, damping: 12, mass: 0.9 });
+                animate(thumbAngle, OPEN, { duration: 0.22, ease: [0, 0, 0.2, 1] });
+                animate(grip, PULL * 0.6, { duration: 0.2, ease: 'easeOut' }); // the hand eases up a touch as it lets go
+                animate(hx, 700, { duration: 1, delay: 0.18, ease: [0.45, 0, 0.7, 0.2] });
+                animate(hy, 1000, { duration: 1, delay: 0.18, ease: [0.45, 0, 0.7, 0.2] });
             }
             await sleep(520); // (the flicker settling)
             if (live()) await floodRef.current(id, false);
@@ -228,6 +260,7 @@ export const Preloader = ({ onReveal, onDone }: { onReveal: () => void; onDone: 
     // Skip intro: the lantern comes on at once and the page opens out quickly
     const skip = () => {
         const id = ++run.current;
+        latest.current.onStage();
         scene.set(1);
         lit.set(1);
         animate(hx, 700, { duration: 0.4 });
@@ -239,9 +272,9 @@ export const Preloader = ({ onReveal, onDone }: { onReveal: () => void; onDone: 
     return (
         <motion.div role="status" aria-live="polite" aria-label="Loading Antra’s portfolio" style={{ opacity: fade }} className="fixed inset-0 z-[200] overflow-hidden">
             {/* the dark, opening out from the lantern onto the page */}
-            <motion.div aria-hidden className="absolute inset-0 bg-black" style={{ maskImage: hole, WebkitMaskImage: hole }} />
+            <motion.div aria-hidden className="absolute inset-0 bg-black [contain:strict]" style={{ maskImage: hole, WebkitMaskImage: hole }} />
             {/* the lantern's light along the opening's edge */}
-            <motion.div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: band, opacity: bandOpacity }} />
+            <motion.div aria-hidden className="pointer-events-none absolute inset-0 [contain:strict]" style={{ background: band, opacity: bandOpacity }} />
 
             <motion.svg
                 aria-hidden

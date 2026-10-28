@@ -41,6 +41,7 @@ export default function Home() {
     const mounted = useIsClient();
     const [theme, setTheme] = useState<Theme>(readSavedTheme);
     // the opening: the lantern is lit, its light fades onto the page, then it's gone
+    const [staged, setStaged] = useState(false); // the hero is mounted, hidden under the dark, so its 3D sets up there
     const [revealed, setRevealed] = useState(false); // the light has started to fade: the hero plays its entrance
     const [intro, setIntro] = useState(true); // the preloader is up
 
@@ -106,7 +107,7 @@ export default function Home() {
                 <Navbar />
                 <main className="relative z-10 flex flex-col items-center w-full">
                     {/* the hero waits for the preloader, so its entrance plays as the light fades */}
-                    {revealed ? <Hero theme={theme} onToggleTheme={toggleTheme} /> : <div className="min-h-[100svh] w-full" />}
+                    {staged || revealed ? <Hero theme={theme} onToggleTheme={toggleTheme} play={revealed} /> : <div className="min-h-[100svh] w-full" />}
                     <Marquee />
                     <About />
                     <Skills />
@@ -117,7 +118,7 @@ export default function Home() {
                     <Contact />
                 </main>
 
-                {intro && <Preloader onReveal={() => setRevealed(true)} onDone={finishIntro} />}
+                {intro && <Preloader onStage={() => setStaged(true)} onReveal={() => setRevealed(true)} onDone={finishIntro} />}
 
                 {/* Paper grain over everything */}
                 <div aria-hidden className="grain" />

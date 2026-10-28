@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { PerformanceMonitor } from '@react-three/drei';
 import * as THREE from 'three';
 import { getBlossomSource, onBlossomSource } from '../lib/blossomSource';
 
@@ -20,6 +21,22 @@ export interface Petals3DProps {
     opacity: number;
     onReady?: () => void;
 }
+
+// Keeps a scene at full sharpness while it runs smoothly, and steps its pixel
+// ratio down (in half steps, so it rarely resizes) when frames start to drop.
+// Only for canvases that draw every frame: on 'demand' the sparse frames read as slow.
+export const AdaptiveResolution = ({ max = 2 }: { max?: number }) => {
+    const setDpr = useThree((s) => s.setDpr);
+    const best = Math.min(max, window.devicePixelRatio || 1);
+    return (
+        <PerformanceMonitor
+            factor={1}
+            flipflops={3}
+            onChange={({ factor }) => setDpr(Math.max(1, Math.round((1 + (best - 1) * factor) * 2) / 2))}
+            onFallback={() => setDpr(1)}
+        />
+    );
+};
 
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
@@ -227,6 +244,7 @@ const Petals3D = (props: Petals3DProps) => {
                 gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }}
                 style={{ pointerEvents: 'none' }}
             >
+                <AdaptiveResolution max={1.5} />
                 <hemisphereLight args={['#FFFFFF', '#F7C6D4', 1.25]} />
                 <directionalLight position={[-4, 6, 8]} intensity={1.6} />
                 <directionalLight position={[5, -3, 5]} intensity={0.6} color="#FFD6E2" />

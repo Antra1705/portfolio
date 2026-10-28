@@ -56,7 +56,7 @@ const Navbar = () => {
     return (
         <header className="fixed inset-x-0 top-0 z-50">
             <div
-                className={`relative z-50 flex items-center justify-between px-5 sm:px-10 transition-all duration-500 ${scrolled && !open ? 'py-3 bg-(--background)/75 backdrop-blur-xl border-b border-transparent' : 'py-5 border-b border-transparent'}`}
+                className={`relative z-50 flex items-center justify-between px-5 sm:px-10 transition-[padding,background-color,backdrop-filter] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${scrolled && !open ? 'py-3 bg-(--background)/75 backdrop-blur-xl border-b border-transparent' : 'py-5 border-b border-transparent'}`}
             >
                 <a href="#home" aria-label="Antra, back to top" className="group flex items-center gap-2 text-fg" onClick={() => setOpen(false)}>
                     <Sakura className="h-5 w-5 text-accent transition-transform duration-700 group-hover:rotate-[72deg]" />

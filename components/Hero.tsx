@@ -19,7 +19,9 @@ const BRANCH_BOX = 'pointer-events-none absolute right-0 top-14 h-[44svh] w-full
 // the right edge above it, dropping petals. The numbers hang from its twigs as
 // small paper tags (tanzaku). Below, the intro and the ways to reach me.
 // Without WebGL the hero is type, and the numbers sit under the intro instead.
-const Hero = ({ theme, onToggleTheme }: ThemeSwitch) => {
+// `play` starts the entrance: the hero mounts early, hidden under the preloader's
+// dark (so its 3D branch sets up there), and plays as the light opens onto it
+const Hero = ({ theme, onToggleTheme, play = true }: ThemeSwitch & { play?: boolean }) => {
     const ref = useRef<HTMLElement>(null);
     const tagLayer = useRef<HTMLDivElement>(null);
     const reduceMotion = useReducedMotion();
@@ -35,8 +37,8 @@ const Hero = ({ theme, onToggleTheme }: ThemeSwitch) => {
                 <>
                     <motion.div
                         initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.4, duration: 1.6 }}
+                        animate={{ opacity: play ? 1 : 0 }}
+                        transition={{ delay: 0.4, duration: 1.6, ease: [0.25, 0.1, 0.25, 1] }}
                         className={`${BRANCH_BOX} z-0`}
                     >
                         <motion.div style={fadeStyle} className="h-full w-full">
@@ -55,14 +57,14 @@ const Hero = ({ theme, onToggleTheme }: ThemeSwitch) => {
             )}
 
             <motion.div style={fadeStyle} className="relative z-10 flex flex-1 flex-col justify-end pt-[30svh] lg:justify-center lg:pt-0">
-                <RisingName className="-ml-[0.05em] text-[clamp(6rem,min(24vw,34svh),21rem)] font-black leading-[0.78] tracking-[-0.065em] text-fg" />
-                <motion.p {...fadeUp(0.75)} className="mt-5 font-display italic text-[clamp(1.75rem,3.8vw,3.5rem)] leading-[1] text-fg">
+                <RisingName play={play} className="-ml-[0.05em] text-[clamp(6rem,min(24vw,34svh),21rem)] font-black leading-[0.78] tracking-[-0.065em] text-fg" />
+                <motion.p {...fadeUp(0.75, play)} className="mt-5 font-display italic text-[clamp(1.75rem,3.8vw,3.5rem)] leading-[1] text-fg">
                     Software engineer <span className="text-accent">&amp;</span> data scientist.
                 </motion.p>
             </motion.div>
 
             {/* Lower band: the intro and the ways to reach me */}
-            <motion.div {...fadeUp(1)} className="relative z-10 mt-14 max-w-xl">
+            <motion.div {...fadeUp(1, play)} className="relative z-10 mt-14 max-w-xl">
                 <p className="text-[clamp(1.125rem,1.6vw,1.375rem)] leading-relaxed text-fg/80">
                     I build full stack and ML products, and ship them to production.
                 </p>

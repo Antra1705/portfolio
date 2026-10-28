@@ -21,20 +21,21 @@ export const STATS = [
     { value: 8.89, decimals: 2, label: 'CGPA at VIT' },
 ];
 
-export const fadeUp = (delay: number) => ({
+// `play` false holds it hidden (the hero mounts under the preloader's dark, then plays)
+export const fadeUp = (delay: number, play = true) => ({
     initial: { opacity: 0, y: 24 },
-    animate: { opacity: 1, y: 0 },
+    animate: play ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 },
     transition: { delay, duration: 0.9, ease },
 });
 
 // The name, letters rising out of a mask; hover any letter for the outline
-export const RisingName = ({ className, delay = 0.2 }: { className: string; delay?: number }) => (
+export const RisingName = ({ className, delay = 0.2, play = true }: { className: string; delay?: number; play?: boolean }) => (
     <h1 aria-label={NAME} className={`flex ${className}`}>
         {NAME.split('').map((letter, i) => (
             <span key={i} aria-hidden className="inline-block overflow-hidden pb-[0.06em] pr-[0.02em]">
                 <motion.span
                     initial={{ y: '105%' }}
-                    animate={{ y: 0 }}
+                    animate={{ y: play ? 0 : '105%' }}
                     transition={{ delay: delay + i * 0.08, duration: 1.1, ease }}
                     className="inline-block"
                 >

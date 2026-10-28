@@ -4,6 +4,7 @@ import React, { useLayoutEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { Day } from '../lib/github';
+import { AdaptiveResolution } from './Petals3D';
 import { Animals, CursorBird, PondCritters, POND_SQUASH, SkyBirds } from './GardenLife';
 
 // A 3D blossom garden: one spot per day, shared by GitHub and LeetCode.
@@ -316,7 +317,8 @@ const Garden = ({ trees, tufts, colors, animate, onHover }: { trees: Tree[]; tuf
 
     useFrame((_, delta) => {
         if (settled.current) return;
-        progress.current = Math.min(1, progress.current + delta / 2.4);
+        // clamped so a slow first frame (shaders compiling) doesn't skip the start of the growth
+        progress.current = Math.min(1, progress.current + Math.min(delta, 1 / 30) / 2.4);
         const spread = 0.7;
         const growth = (delay: number) => clamp01(progress.current * (1 + spread) - delay * spread);
         const tiny = 0.0001;
@@ -380,12 +382,15 @@ const Garden = ({ trees, tufts, colors, animate, onHover }: { trees: Tree[]; tuf
             tuftMesh.current?.setMatrixAt(i, dummy.matrix);
         });
 
+        const done = progress.current >= 1;
         for (const m of [trunkMesh, puffMesh, blossomMesh, fruitMesh, petalMesh, tuftMesh]) {
             if (!m.current) continue;
             m.current.instanceMatrix.needsUpdate = true;
-            m.current.computeBoundingSphere();
+            // the garden sits in view while it grows; size the bounds once, when it's done,
+            // rather than walking every instance each frame
+            if (done) m.current.computeBoundingSphere();
         }
-        if (progress.current >= 1) settled.current = true;
+        if (done) settled.current = true;
     });
 
     const hover = (day: GardenDay, e: { stopPropagation: () => void; nativeEvent: PointerEvent }) => {
@@ -520,6 +525,7 @@ const ContributionGarden = ({ weeks, colors, animate, cursorBird, active, onHove
             style={{ touchAction: 'pan-y' }}
             onPointerMissed={() => onHover(null)}
         >
+            <AdaptiveResolution />
             <FitCamera width={width} depth={depth} edgeHeight={edgeHeight} haze={colors.background} />
             <hemisphereLight args={['#FFF6F9', colors.ground, 1.25]} />
             <directionalLight

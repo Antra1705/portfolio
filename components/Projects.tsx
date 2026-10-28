@@ -385,13 +385,16 @@ const Projects = () => {
                     <AnimatePresence mode="wait" initial={false}>
                         <motion.div key={sel} className="relative px-3 sm:px-4" exit={{ opacity: 0, transition: { duration: 0.15 } }}>
                             <span aria-hidden className="scroll-roller absolute bottom-[-8px] left-0 top-[-8px] z-10 w-4 rounded-full sm:w-5" />
+                            {/* the rolling end, moved by transform (its track is the scroll's width less the roller) */}
                             <motion.span
                                 aria-hidden
-                                initial={{ left: '0%' }}
-                                animate={{ left: 'calc(100% - 20px)' }}
+                                initial={{ x: '0%' }}
+                                animate={{ x: '100%' }}
                                 transition={{ duration: 0.9, ease }}
-                                className="scroll-roller absolute bottom-[-8px] top-[-8px] z-10 w-4 rounded-full sm:w-5"
-                            />
+                                className="pointer-events-none absolute bottom-[-8px] left-0 right-5 top-[-8px] z-10 will-change-transform"
+                            >
+                                <span className="scroll-roller absolute inset-y-0 left-0 w-4 rounded-full sm:w-5" />
+                            </motion.span>
                             <motion.div
                                 initial={{ clipPath: 'inset(0 100% 0 0)' }}
                                 animate={{ clipPath: 'inset(0 0% 0 0)' }}

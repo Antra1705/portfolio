@@ -23,12 +23,17 @@ const CursorGlow = () => {
         let ry = 0;
         let started = false;
 
-        const step = () => {
-            rx += (x - rx) * 0.2;
-            ry += (y - ry) * 0.2;
+        let then = 0;
+        const step = (now: number) => {
+            // eased toward the pointer by elapsed time, so it feels the same at 60Hz or 120Hz
+            const k = then ? 1 - Math.exp(-Math.min(now - then, 50) / 70) : 0.2;
+            then = now;
+            rx += (x - rx) * k;
+            ry += (y - ry) * k;
             ring.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
             // Keep animating only until the ring catches up
             frame = Math.abs(x - rx) + Math.abs(y - ry) > 0.2 ? requestAnimationFrame(step) : 0;
+            if (!frame) then = 0;
         };
 
         const onMove = (e: PointerEvent) => {

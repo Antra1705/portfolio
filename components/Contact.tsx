@@ -232,7 +232,7 @@ const FooterLink = ({ href, children, external }: { href: string; children: Reac
         {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         className="group inline-flex min-h-10 items-center gap-2 text-lg font-semibold tracking-[-0.01em] text-fg/80 transition-colors hover:text-accent"
     >
-        <span aria-hidden className="h-px w-0 bg-accent transition-all duration-300 group-hover:w-4" />
+        <span aria-hidden className="h-px w-0 bg-accent transition-[width] duration-300 ease-out group-hover:w-4" />
         {children}
         {external && <span aria-hidden className="text-sm text-muted transition-transform duration-300 group-hover:-rotate-45 group-hover:text-accent">↗</span>}
     </a>
